@@ -35,17 +35,17 @@ The data was generated using the [Wireless InSite ray-tracing simulator](https:/
 The data pre-processing sequence only needs to be executed if a different sampling rate is desired (default = 20MHz)
 
 ### Data Pre-Processing
-1 - Download the 'cir_\*.txt' files; 
-2 - Edit the SAMPLE_FREQ at 'general_includes.hpp' to the desired frequency; 
-3 - Edit 'main.cpp' at line 111, with the dowloaded files location; 
-4 - Compile using the makefile and run. A new file should be present in the '\data_processed folder' ('final_table').
+- Download the 'cir_\*.txt' files; 
+- Edit the SAMPLE_FREQ at 'general_includes.hpp' to the desired frequency; 
+- Edit 'main.cpp' at line 111, with the dowloaded files location; 
+- Compile using the makefile and run. A new file should be present in the '\data_processed folder' ('final_table').
 
 ### Positioning Learning
-1 - Download/copy the 'final_table' file into the '\mmWave-localization-learning\ML training (python+tensorflow)' folder; 
-2 - Run 'data_preprocessing.py'; 
-3 - Edit 'simulation_parameters.py' to the desired settings; 
-4 - Run 'DNN_train.py' to train the NN; 
-5 - Run 'DNN_predict.py' to sample predictions.
+- Download/copy the 'final_table' file into the '\mmWave-localization-learning\ML training (python+tensorflow)' folder; 
+- Run 'data_preprocessing.py'; 
+- Edit 'simulation_parameters.py' to the desired settings; 
+- Run 'DNN_train.py' to train the NN; 
+- Run 'DNN_predict.py' to sample predictions.
  
 
 ## Authors
