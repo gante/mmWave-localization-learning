@@ -45,7 +45,8 @@ The data pre-processing sequence only needs to be executed if a different sampli
 - Run 'data_preprocessing.py'; 
 - Edit 'simulation_parameters.py' to the desired settings; 
 - Run 'DNN_train.py' to train the NN; 
-- Run 'DNN_predict.py' to sample predictions.
+- Run 'DNN_predict.py' (inside the '\plots and data analysis' folder) to sample predictions;
+- Visualize the data using the provided scripts.
  
 
 ## Authors
