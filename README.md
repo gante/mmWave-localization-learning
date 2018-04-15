@@ -55,6 +55,8 @@ The data pre-processing sequence only needs to be executed if a different sampli
 
 ### Papers
 
+"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- https://arxiv.org/abs/1804.04112
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
