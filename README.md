@@ -18,7 +18,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Data
 
-The used data will be made public soon. For now, you can contact me through email to obtain the used data (joaofranciscocardosogante@gmail.com). 
+You can contact me through email to obtain the dataset (joaofranciscocardosogante@gmail.com). 
 
 The data was generated using the [Wireless InSite ray-tracing simulator](https://www.remcom.com/wireless-insite-em-propagation-software/) and a [high precision open-source 3D map of New York](http://www1.nyc.gov/site/doitt/initiatives/3d-building.page), made available by the New York City Department of Information Technology & Telecommunications. The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Management Center](https://goo.gl/maps/xrqvT9VS59K2).
 
