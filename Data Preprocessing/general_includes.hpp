@@ -16,7 +16,7 @@
 //#include <cstdio>
 //#include <fstream>
 
-//#include <cstring>
+#include <cstring>
 //#include <ctime>
 //#include <chrono>
 //#include <stdlib.h>

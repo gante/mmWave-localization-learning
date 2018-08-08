@@ -108,7 +108,7 @@ int main(){
     for(bf_index = 1; bf_index <= BEAMFORMINGS; bf_index++){
 
         //Loads the file, with the name template "\\data_raw\\cir_" + i + ".txt"
-        sprintf(filename, "C:/CIR_32/cir_%d.txt", bf_index);
+        sprintf(filename, "data_raw/CIR_32/cir_%d.txt", bf_index);
         InputFile = fopen(filename, "r");
 
         cout << "Processing file #" << bf_index << "... ";
@@ -623,6 +623,8 @@ void fill_final_table(float * final_table, const int & valid_users, const int & 
 
     if(valid_count != valid_users){
         cout << "\nERROR - the number of valid users don't match! ";
+        cout << valid_count;
+        cout << valid_users;
     }
 
     delete [] read_data;
