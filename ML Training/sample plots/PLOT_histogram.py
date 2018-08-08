@@ -25,10 +25,16 @@ sorted_distance = np.sort(distance_output)
 distance_95 = sorted_distance[int(0.95 * len_predictions)]
 print('\n\nTest distance (m)= {0:.4f},   95% percentile (m) = {1:.4f}'.format(avg_distance, distance_95))
 
-    
+
+#--------------- RMSE
+RMSE = np.sqrt(np.mean(np.square(distance_output)))
+
+print("RMSE = {0} m".format(RMSE))
+
+#--------------- CDF    
     
 CDF_bin = [0]*n_bins 
-print('\n\nComputing the CDF...')
+print('\n\nComputing the CDF...    <--- correction: cumulative histogram')
 
 for i in range(n_bins):
     current_percentile = i/n_bins
@@ -47,7 +53,7 @@ ax1.plot(x,y)
 
 ax1.set_ylim([0,1])
 ax1.set_xlim([0, x[-1]])
-ax1.set_ylabel("CDF", fontsize=12)
+ax1.set_ylabel("Cumulative Histogram", fontsize=12)
 ax1.set_xlabel("Error (m)", fontsize=12)
 
 #mark 95%
@@ -67,7 +73,7 @@ note1 = ax1.annotate("$95^{th}$ percentile:\n"+str(distance_95), xy=(distance_95
 ax2.plot(x[:900],y[:900])
 ax2.set_xlim([0, x[900]])
 ax2.set_ylim([0, 0.9])
-ax2.set_title("Zoomed CDF, excluding the last 10%")
+ax2.set_title("Zoomed cumulative histogram,\n excluding the last 10%")
 
 #mark 50%
 distance_50 = sorted_distance[int(0.50 * len_predictions)]

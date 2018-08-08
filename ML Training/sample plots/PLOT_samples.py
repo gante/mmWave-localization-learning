@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 #Runs "simulation_parameters.py" and keeps its variables    [simulation parameters]
 exec(open("../simulation_parameters.py").read(), globals())
 
-data_file =  '../' + data_file
+data_file =  '../' + preprocessed_file
 
 
 
@@ -67,7 +67,7 @@ if(len(invalid_slots) > 0):
 
     
 #randomly selects and index / indexes
-images_to_process = 2
+images_to_process = 3
 index = np.random.randint(features.shape[0], size=images_to_process)
 
 
@@ -84,8 +84,8 @@ for i in range(images_to_process):
     X = (labels[index[i]][0] * grid[0]) - shift[0]
     Y = (labels[index[i]][1] * grid[1]) - shift[1]
     
-    title = 'X=' + str(X) + ' Y=' + str(Y)
-    plt.title(title)
+    # title = 'X=' + str(X) + ' Y=' + str(Y)
+    # plt.title(title)
     plt.xlabel('Beamforming Index')
     plt.ylabel('Sample Number')
 
