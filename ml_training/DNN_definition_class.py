@@ -5,6 +5,8 @@
 #Runs "simulation_parameters.py" and keeps its variables    [simulation parameters]
 exec(open("simulation_parameters.py").read(), globals())
 
+os.environ["CUDA_VISIBLE_DEVICES"]=str(target_gpu)
+print("[Using GPU #{0}]".format(target_gpu))
 
 #Runs "load_data.py" and keeps its variables                [data loading]
 exec(open("load_data.py").read(), globals())

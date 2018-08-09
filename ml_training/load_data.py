@@ -6,12 +6,11 @@ exec(open("simulation_parameters.py").read(), globals())
 ##########################################################
 #Data Loading
 
+
 def create_noisy_features(features, labels, noise_std_converted, 
                           min_pow_cutoff, scaler = None, only_16_bf = False, 
                           undersampling = 1):
- 
-    #todo: run this function in a separate thread, for speedup
-    
+
     #undersamples the BFs, if wanted
     if only_16_bf:
         mask = np.ones(time_slots*beamformings, dtype=bool)
@@ -48,8 +47,7 @@ def create_noisy_features(features, labels, noise_std_converted,
     noisy_features = features + noise
     noisy_features[noisy_features < min_pow_cutoff] = 0
     
-    
-    
+      
     #removes the entries containing only 0
     mask = np.ones(labels.shape[0], dtype=bool)
     for i in range(labels.shape[0]):
@@ -60,16 +58,15 @@ def create_noisy_features(features, labels, noise_std_converted,
             
     noisy_features = noisy_features[mask,:]
     noisy_labels = labels[mask,:]
-    
+
     #doublecheck
     assert noisy_features.shape[0] == noisy_labels.shape[0]
     assert noisy_labels.shape[1] == 2
     assert noisy_features.shape[1] == features.shape[1]
-    
+
     #Applies the preprocessing, if needed
     if scaler is not None:
-        noisy_features = scaler.fit_transform(noisy_features)
-    
+        noisy_features = scaler.fit_transform(noisy_features)   
     return([noisy_features, noisy_labels])
     
     
@@ -125,14 +122,6 @@ else:
     scaler_name = 'normalized'
   
   
-#Creating the artificial test set
-print("Creating the artificial test set...")
-features_test, labels_test = create_noisy_features(features, labels, noise_std_converted, min_pow_cutoff, scaler, only_16_bf)
-
-#Converts the labels to a one-hot vector
-if lateral_partition > 1:
-    print("Converting the labels to one-hot vectors...")
-    labels_test = position_to_class(labels_test, lateral_partition)
     
 #Data Loading
 ##########################################################
