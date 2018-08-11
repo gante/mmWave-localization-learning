@@ -90,7 +90,9 @@ def train_a_class(index, print_periodicity, print_train):
 
         #Starts the Session
         saver = tf.train.Saver()
-        with tf.Session() as sess:
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth=True
+        with tf.Session(config=config) as sess:
           
           
             #initializes the variables

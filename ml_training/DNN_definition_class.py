@@ -44,7 +44,7 @@ def weight_variable(shape, std = None):
     #if the std is not explicitly added, uses Xavier init
     if std is None:
         fan_in, fan_out = get_fans(shape)
-        std = np.sqrt(2. / (fan_in + fan_out))
+        std = np.sqrt(2. / (fan_in + fan_out)) # <--- remove fan_out [https://arxiv.org/pdf/1502.01852.pdf]
 
     initial = tf.truncated_normal(shape, stddev=std)
     return tf.Variable(initial)

@@ -5,6 +5,9 @@
 #Runs "simulation_parameters.py" and keeps its variables    [simulation parameters]
 exec(open("simulation_parameters.py").read(), globals())
 
+os.environ["CUDA_VISIBLE_DEVICES"]=str(target_gpu)
+print("[Using GPU #{0}]".format(target_gpu))
+
 dictionary = dnn_regression_parameters
 batch_size = dictionary['batch_size']
 epochs = dictionary['epochs']
