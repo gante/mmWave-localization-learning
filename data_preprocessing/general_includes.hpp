@@ -31,7 +31,7 @@ using namespace std;
 #define BEAMFORMINGS 32
 
 //Preprocessing parameters
-#define SAMPLE_FREQ 20000000.0   // now = 20 MHz   default: 10 MHz = 1 sample per 0.1 us
+#define SAMPLE_FREQ 5000000.0   // default: 20 MHz = 1 sample per 0.05 us
 #define MAX_DELAY 0.000006      // = 6 us (slowest signal = 6.2 us, only 255 com 6+ us)
 #define MIN_POWER -150.0        // minimum power = -150 dBm
 
