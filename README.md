@@ -1,5 +1,3 @@
-# [MAJOR UPDATE IN PROGRESS, PLEASE CHECK BACK IN A FEW DAYS]
-
 # mmWave Localization Learning
 
 With 5G millimeter wave wireless communications, the resulting radiation reflects on most visible
