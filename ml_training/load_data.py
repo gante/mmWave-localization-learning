@@ -1,4 +1,6 @@
 import math
+from sklearn.preprocessing import Binarizer
+from sklearn.preprocessing import Normalizer
 
 #Runs "simulation_parameters.py" and keeps its variables    [simulation parameters]
 exec(open("simulation_parameters.py").read(), globals())
@@ -66,7 +68,7 @@ def create_noisy_features(features, labels, noise_std_converted,
 
     #Applies the preprocessing, if needed
     if scaler is not None:
-        noisy_features = scaler.fit_transform(noisy_features)   
+        noisy_features = scaler.fit_transform(noisy_features)
     return([noisy_features, noisy_labels])
     
     
@@ -112,12 +114,10 @@ if (removed_invalid_slots == False):
   
   
 #DATA PREPROCESSING [binarize/normalize]:
-if binary_scaler:
-    from sklearn.preprocessing import Binarizer
+if binary_scaler:  
     scaler = Binarizer(0.1, copy=False)
     scaler_name = 'binarized'
-else:
-    from sklearn.preprocessing import Normalizer
+else:    
     scaler = Normalizer(copy=False)
     scaler_name = 'normalized'
   

@@ -60,9 +60,9 @@ with tf.Session(config=config) as sess:
   
   
     #creates the features for the first epoch
-    features_train, labels_train = create_noisy_features(features, labels, 
-                    noise_std_converted, min_pow_cutoff, scaler, only_16_bf,
-                    test_spatial_undersampling)
+    train_data_args = [features, labels, noise_std_converted, min_pow_cutoff, 
+                        scaler, only_16_bf, test_spatial_undersampling]
+    features_train, labels_train = create_noisy_features(*train_data_args)            
     if n_classes > 1:
         labels_train = position_to_class(labels_train, lateral_partition)
     train_set_size = features_train.shape[0]
@@ -72,13 +72,18 @@ with tf.Session(config=config) as sess:
   
     #Starts fetching the features for the next epochs (in parallel processes)
     parallel_processes = 3 #more than 3 gave me no improvement
-    pool = Pool(processes=parallel_processes)
-    train_data_args = [features, labels, noise_std_converted, min_pow_cutoff, 
-                    scaler, only_16_bf, test_spatial_undersampling]
-    next_data = []
-    for i in range(parallel_processes):
-        next_data.append(pool.apply_async(create_noisy_features, 
-                                (*train_data_args,)))
+    
+    #more than 20MHz -> data gets too big -> Pool is limited to 4GB variables
+    # -> :( :( [tried converting to bool and to sparse, didn't help]
+    if sample_freq > 20:
+        parallel_processes = 0
+    
+    if parallel_processes:
+        pool = Pool(processes=parallel_processes)
+        next_data = []
+        for i in range(parallel_processes):
+            next_data.append(pool.apply_async(create_noisy_features, 
+                                    (*train_data_args,)))
 
   
     #runs the training phase
@@ -114,19 +119,26 @@ with tf.Session(config=config) as sess:
         
             #Sets a new train set if noisy data is wanted:
             if noise_std_converted != 0.0:
-                #retrieves the results from the parallel thread, and starts a 
-                # new one
-                parallel_index = epochs_completed%parallel_processes
-                features_train, labels_train = next_data[parallel_index].get()
-                next_data[parallel_index] = pool.apply_async(create_noisy_features, 
-                    (*train_data_args,))
+                
+                if parallel_processes:
+                    #retrieves the results from the parallel thread, and starts 
+                    # a new one
+                    parallel_index = epochs_completed%parallel_processes
+                    features_train, labels_train = next_data[parallel_index].get()
+                    if scaler_name == 'binary':
+                        features_train = features_train.todense()
+                    next_data[parallel_index] = pool.apply_async(create_noisy_features, 
+                        (*train_data_args,))
+                else:
+                    features_train, labels_train = create_noisy_features(*train_data_args)
+                    
+                    
                 if n_classes > 1:
                     labels_train = position_to_class(labels_train, lateral_partition)
                 train_set_size = features_train.shape[0]
                 num_batches = int(math.ceil(train_set_size / batch_size))
                 features_train, labels_train = shuffle(features_train, labels_train)
                 assert features_train.shape[0] == labels_train.shape[0]
-            
             
             current_batch = 0
             epochs_completed += 1

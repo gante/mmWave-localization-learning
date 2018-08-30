@@ -94,8 +94,11 @@ if slice_weak_TS:
     
     ts_to_delete = [0]
     
-    for i in range((119-82) +1):
-        ts_to_delete.append(82 + i)
+    max_ts_index = time_slots-1
+    ts_slice_index = slice_weak_TS_start_remove
+    
+    for i in range((max_ts_index-ts_slice_index) +1):
+        ts_to_delete.append(ts_slice_index + i)
     
     print("Slots to remove:", ts_to_delete)
     

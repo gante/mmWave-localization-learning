@@ -5,10 +5,10 @@
 ##########################################################
 #Data parameters   -   From the data, DO NOT CHANGE
 
-data_file = '../data/final_table'
+data_file = '../data_preprocessing/data_processed/final_table'
 data_downscale = 400    #x and y have a range of 400, scaled down to [0,1]
 max_time = 6		    #in micro seconds
-sample_freq = 20	    #in MHz
+sample_freq = 5	    #in MHz
 beamformings = 32
 
 starting_x = -183.0
@@ -34,9 +34,11 @@ original_rx_gain = 0    #in dBi
 ##########################################################
 #Pre-processing parameters
 
-preprocessed_file = '../data/tf_dataset'
+target_gpu = 3
 
-baseline_cut = -100     #in dBm
+preprocessed_file = 'processed_data/tf_dataset'
+
+baseline_cut = -100     #in dBm           <--- change for different sample_freq
 tx_power = 45           #in dBm
 rx_gain = 10            #in dBi
 

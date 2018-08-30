@@ -10,7 +10,9 @@ main.o: main.cpp general_includes.hpp
 	$(GCC) $(CFLAGS) -c main.cpp 
 	
 cleanup:
-	del *.o
+	#WINDOWS: del *.o
+	rm *.o
 	
 clean:
-	del *.o
+	#WINDOWS del *.o
+	rm *.o
