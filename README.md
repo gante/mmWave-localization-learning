@@ -1,4 +1,4 @@
-# mmWave Localization Learning
+# Beamformed Fingerprint Learning
 
 With 5G millimeter wave wireless communications, the resulting radiation reflects on most visible
 objects, creating rich multipath environments. The radiation is thus significantly shaped by the obstacles
@@ -8,8 +8,8 @@ obstacles, and the mobile receiver.
 In this GitHub repository, the creation of beamformed fingerprints is achieved
 through a pre-established codebook of beamforming patterns transmitted by a base station. Making use
 of the aforementioned hidden information, deep learning techniques are employed to
-convert the received beamformed fingerprints into a mobile device’s position. Compared to recent low-
-power A-GPS implementations, the simulations show that the proposed method achieves 60× higher
+convert the received beamformed fingerprints into a mobile device’s position. Compared to recent low-power 
+A-GPS implementations, the simulations show that the proposed method achieves 60× higher
 energy efficiency*, while keeping similar accuracy. The average errors of down to 3.3 meters are obtained
 on realistic outdoor scenarios, containing mostly non-line-of-sight positions, making it a very competitive
 and promising alternative for outdoor positioning.
@@ -17,6 +17,8 @@ and promising alternative for outdoor positioning.
 For more information, refer to papers section of this README file. If you find any error, please contact me (joao.gante@tecnico.ulisboa.pt).
 
 *Hopefully, the paper for this will be available soon :)
+
+
 
 ## Getting Started
 
