@@ -1,6 +1,7 @@
 '''
-Simulations parameters file:
-created to ensure consistency throughout ALL other files
+simulation_parameters.py
+
+-> created to ensure consistency throughout ALL other files
 '''
 
 
@@ -78,14 +79,16 @@ noise_std_converted = (test_noise * power_scale)
 
 #scaler
 binary_scaler = True
-only_16_bf = False  #<--- change maxpool from [2,1] to [1,1] when this flag is true, to keep the same resource utilization and thus enable a fair comparison
+only_16_bf = False  #<--- change maxpool from [2,1] to [1,1] when this flag is
+                    #   true, to keep the same resource utilization and thus
+                    #   enable a fair comparison
 predicted_input_size = time_slots * beamformings
 
 #Misc. [for other tests]
 detect_invalid_slots = False
 slice_weak_TS = removed_ts
-test_spatial_undersampling = 1   # =1 -> 1m between samples, =2 -> 2m, ...
-                                 # min = 1 m
+train_spatial_undersampling = 1 # =1 -> 1m between samples, =2 -> 2m, ...
+                                # min = 1 m
 #Pre-processing parameters
 ##########################################################
 
@@ -93,13 +96,16 @@ test_spatial_undersampling = 1   # =1 -> 1m between samples, =2 -> 2m, ...
 ##########################################################
 #CNN - Classification parameters
 
-lateral_partition = 8                       #this will result in 'lateral_partition'^2 classes!!
+#With this variable, can control the number of classes. We will have
+#   'lateral_partition'^2 classes. If lateral_partition == 1, the code will
+#   jump straight into the regression part.
+lateral_partition = 8
 area_partition = lateral_partition ** 2
 n_classes = area_partition                  #this variable has 2 instances, for readability
 
 dnn_classification_parameters = {   'batch_size': 64,
                                     'epochs': 1000,
-                                    'dropout': 0.01,
+                                    'dropout': 0.01,        #<--- the dropout is small because we are also adding noise to the data
                                     'learning_rate': 1e-4,
                                     'learning_rate_decay': 0.995,
                                     'fcl_neurons': 256,

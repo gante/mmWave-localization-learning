@@ -10,10 +10,6 @@ import os
 import struct
 
 
-#Runs "simulation_parameters.py" and keeps its variables
-exec(open("simulation_parameters.py").read(), globals())
-
-
 def data_to_dataset(data):
     '''
     Converts the raw (floating point) input data into features and labels
@@ -68,6 +64,9 @@ if __name__ == "__main__":
     print("\n------------------------------------------------------------")
     print("PLEASE DOUBLE-CHECK THE SIMULATION PARAMETERS!")
     print("------------------------------------------------------------\n")
+
+    #Runs "simulation_parameters.py" and keeps its variables
+    exec(open("simulation_parameters.py").read(), globals())
 
     time_slots = max_time * sample_freq
     input_size = time_slots * beamformings

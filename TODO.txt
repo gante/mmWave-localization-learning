@@ -1,5 +1,11 @@
+# GENERAL
 1 - Change the preprocessing to python (there is no need for C++, it only
     overcomplicates stuff)
-2 - Clean the code (remove non-english comments, make sure everything has 
+2 - Clean the code (remove non-english comments, make sure everything has
     <80 chars per line, ...)
 3 - Add comments
+
+
+#PERFORMANCE
+1 - ml_training/2-DNN_classifier_train.py: Add feature noise in GPU, not in CPU
+    (should speed up!)
