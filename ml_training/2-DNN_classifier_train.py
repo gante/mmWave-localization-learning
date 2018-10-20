@@ -165,7 +165,7 @@ if __name__ == "__main__":
 
                     #flattens that list
                     accuracy_output = np.mean(accuracy_output)
-                    print('Finished Epoch {0},   Accuracy= {1},    next LR = {2}'
+                    print('Finished Epoch {0},   Accuracy= {1:.4f},    next LR = {2:.4e}'
                         .format(epochs_completed, accuracy_output, learning_rate))
                     if accuracy_output > best_acc:
                         epochs_not_improving = 0

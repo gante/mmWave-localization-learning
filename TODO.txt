@@ -4,6 +4,7 @@
 2 - Clean the code (remove non-english comments, make sure everything has
     <80 chars per line, ...)
 3 - Add comments
+4 - Swap the "exec" in python to proper loading mechanisms
 
 
 #PERFORMANCE
