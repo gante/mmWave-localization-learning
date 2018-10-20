@@ -76,14 +76,13 @@ def batch_norm(x, phase):
 ##########################################################
 
 
- ##########################################################
+##########################################################
 #   NN Architecture
 
 #Control variables
 learning_rate_var = tf.placeholder(tf.float32, shape=[])        # The current learning rate
 phase = tf.placeholder(tf.bool)                                 # Bool that tells the system whether it is training (1) or testing (0)
 keep_prob = tf.placeholder(tf.float32, name = 'keep_prob')      # (1 - Dropout) probability
-
 
 #Defines the "inputable" data (data + results)
 input_size = predicted_input_size

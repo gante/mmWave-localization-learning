@@ -1,14 +1,16 @@
 # Beamformed Fingerprint Learning
 
+[Last major update: 31-Aug-2018]
+
 With 5G millimeter wave wireless communications, the resulting radiation reflects on most visible
 objects, creating rich multipath environments. The radiation is thus significantly shaped by the obstacles
 it interacts with, carrying latent information regarding the relative positions of the transmitter, the
-obstacles, and the mobile receiver. 
+obstacles, and the mobile receiver.
 
 In this GitHub repository, the creation of beamformed fingerprints is achieved
 through a pre-established codebook of beamforming patterns transmitted by a base station. Making use
 of the aforementioned hidden information, deep learning techniques are employed to
-convert the received beamformed fingerprints into a mobile device’s position. Compared to recent low-power 
+convert the received beamformed fingerprints into a mobile device’s position. Compared to recent low-power
 A-GPS implementations, the simulations show that the proposed method achieves 60× higher
 energy efficiency*, while keeping similar accuracy. The average errors of down to 3.3 meters are obtained
 on realistic outdoor scenarios, containing mostly non-line-of-sight positions, making it a very competitive
@@ -32,7 +34,7 @@ This repository is split in two parts (each with their own internal README):
 
 ### Data
 
-You can contact me through email to obtain access to the dataset (joao.gante@tecnico.ulisboa.pt). 
+You can contact me through email to obtain access to the dataset (joao.gante@tecnico.ulisboa.pt).
 
 The data was generated using the [Wireless InSite ray-tracing simulator](https://www.remcom.com/wireless-insite-em-propagation-software/) and a [high precision open-source 3D map of New York](http://www1.nyc.gov/site/doitt/initiatives/3d-building.page), made available by the New York City Department of Information Technology & Telecommunications. The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Management Center](https://goo.gl/maps/xrqvT9VS59K2).
 
