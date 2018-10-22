@@ -17,8 +17,8 @@ on realistic outdoor scenarios, containing mostly non-line-of-sight positions, m
 and promising alternative for outdoor positioning.
 
 The following image shows the simulated results for the average error per covered position. Given that the transmitter 
-is at the center of the image (red triangle), and most of the solid yellow shapes are buildings, it is possible 
-to confirm that being in a NLOS position is not a constraint for the proposed system.
+is the red triangle at the center of the image, and most of the solid yellow shapes are buildings (see the other image 
+below), it is possible to confirm that being in a NLOS position is not a constraint for the proposed system.
 
 <p align="center">
   <img src="images/error_vs_position.PNG" width="480"/>
