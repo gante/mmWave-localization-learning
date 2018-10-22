@@ -16,9 +16,13 @@ energy efficiency*, while keeping similar accuracy. The average errors of down t
 on realistic outdoor scenarios, containing mostly non-line-of-sight positions, making it a very competitive
 and promising alternative for outdoor positioning.
 
-![Average error per covered position. Given that the transmitter is at the center
-of the image (red triangle), it is possible to confirm that being in a NLOS position is 
-not a constraint for the proposed system.](images/error_vs_position.PNG)
+The following image shows the simulated results for the average error per covered position. Given that the transmitter 
+is at the center of the image (red triangle), and most of the solid yellow shapes are buildings, it is possible 
+to confirm that being in a NLOS position is not a constraint for the proposed system.
+
+<p align="center">
+  <img src="images/error_vs_position.PNG" width="480"/>
+</p>
 
 For more information, refer to papers section of this README file. If you find any error, please contact me (joao.gante@tecnico.ulisboa.pt).
 
@@ -41,6 +45,10 @@ This repository is split in two parts (each with their own internal README):
 You can contact me through email to obtain access to the dataset (joao.gante@tecnico.ulisboa.pt).
 
 The data was generated using the [Wireless InSite ray-tracing simulator](https://www.remcom.com/wireless-insite-em-propagation-software/) and a [high precision open-source 3D map of New York](http://www1.nyc.gov/site/doitt/initiatives/3d-building.page), made available by the New York City Department of Information Technology & Telecommunications. The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Management Center](https://goo.gl/maps/xrqvT9VS59K2).
+
+<p align="center">
+  <img src="images/propagation.PNG" width="400"/>
+</p>
 
 
 ### Prerequisites
