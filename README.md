@@ -16,6 +16,10 @@ energy efficiency*, while keeping similar accuracy. The average errors of down t
 on realistic outdoor scenarios, containing mostly non-line-of-sight positions, making it a very competitive
 and promising alternative for outdoor positioning.
 
+![Average error per covered position. Given that the transmitter is at the center
+of the image (red triangle), it is possible to confirm that being in a NLOS position is 
+not a constraint for the proposed system.](images/error_vs_position.PNG)
+
 For more information, refer to papers section of this README file. If you find any error, please contact me (joao.gante@tecnico.ulisboa.pt).
 
 *Hopefully, the paper for this will be available soon :)
