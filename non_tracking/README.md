@@ -1,6 +1,6 @@
-# ML Training
+# Single Beamformed Fingerprint Estimates
 
-This folder contains the core of the project. To train the system, follow the steps below
+This folder contains the files related to single beamformed fingerprint estimates. To train the system, follow the steps below
 
 ## Running Sequence
 
