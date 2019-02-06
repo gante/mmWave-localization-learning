@@ -2,7 +2,7 @@
 
 [Last major update: 06-Feb-2019 (Added new paper; Added tracking folder)]
 
-A machine learning based algorithm that enables positioning estimates from mmWave transmissions.
+A machine learning based algorithm that enables accurate positioning estimates from mmWave transmissions.
 
 ## Background
 
@@ -64,6 +64,7 @@ The data was generated using the [Wireless InSite ray-tracing simulator](https:/
 ### Papers
 
 "Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 (also here: https://arxiv.org/abs/1804.04112)
+
 "Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 (feel free to email me for an early copy)
 
 ## License
