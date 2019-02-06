@@ -2,7 +2,7 @@
 
 [Last major update: 06-Feb-2019 (Added new paper; Added tracking folder)]
 
-A machine learning based algorithm that enables accurate positioning estimates from mmWave transmissions.
+A ML based algorithm that enables accurate positioning from mmWave transmissions - with and without tracking
 
 ## Background
 
@@ -11,10 +11,11 @@ objects, creating rich multipath environments. The radiation is thus significant
 it interacts with, carrying latent information regarding the relative positions of the transmitter, the
 obstacles, and the mobile receiver.
 
-In this GitHub repository, the creation of beamformed fingerprints is achieved
+In this GitHub repository, the creation of **beamformed fingerprints** is achieved
 through a pre-established codebook of beamforming patterns transmitted by a base station. Making use
 of the aforementioned hidden information, deep learning techniques are employed to
-convert the received beamformed fingerprints into a mobile device’s position. The average errors of down to 3.3 meters are obtained
+convert the received beamformed fingerprints into a mobile device’s position. The average errors of down to 
+3.3/1.8 meters (non-tracking/tracking) are obtained
 on realistic outdoor scenarios, containing mostly non-line-of-sight positions, making it a very competitive
 and promising alternative for outdoor positioning.
 
@@ -33,11 +34,12 @@ For more information, refer to papers section of this README file. If you find a
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-This repository is split in two parts (each with their own internal README):
-- data_preprocessing (converts the raw data into an organized table)
-- ml_training (the actual ML part)
+This repository is split in three parts (each with their own internal README):
+- data_preprocessing (converts the raw ray-tracing data into an organized table);
+- non-tracking (ML algorithms for position estimates from a single beamformed fingerprint);
+- tracking (ML algorithms for position estimates from a sequence of beamformed fingerprints).
 
-*The data pre-processing sequence only needs to be executed if a different sampling rate is desired (default = 20MHz)*
+*The data pre-processing sequence only needs to be executed if a different sampling rates are desired. The "final_table" file, available in the link to the used data, contains the output of the pre-processing for 20MHz.*
 
 ### Data
 
