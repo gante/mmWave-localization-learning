@@ -1,17 +1,11 @@
 # Tracking [EXPERIMENTAL]
 
-This folder contains an add-on to the "core" project, using RNNs to track users
-when sequences of positions are available. To train the system, follow the
-steps below
+# Tracking - Estimates from Sequences of Beamformed Fingerprints [EXPERIMENTAL]
+
+This folder contains the files related to tracking (estimates from sequences of beamformed fingerprints). To train the system, follow the steps below
 
 ## Running Sequence
 
-- Run steps 1, 2, 3, and 4 in the previous folder (to run step #k, execute the
-script whose name starts with "k-"). This will train the non-tracking
-regressor, which will be used as "baseline" here.
-- Meanwhile, prepare the desired settings in "tracking_parameters.py";
-- Generate the paths (i.e. sequence of TRUE positions) with step 5;
-- Obtain the data triplet [noisy_features; baseline_prediction; true_label]
-with step 6. Steps 5 and 6 are independent, so you can run them both at the
-same time of you have enough computing resources;
-- Use this data to train the RNN in step 7.
+- [If the preprocessing wasn't run] Download the 'final_table' file into the '~\mmWave-localization-learning\data_preprocessing\data_processed' folder; 
+- Edit 'simulation_parameters.py' to the desired settings;
+- Run the .py files whose names start with integers (1, 2, 3) sequentially.
