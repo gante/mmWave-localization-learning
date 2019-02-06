@@ -1,6 +1,10 @@
 # Beamformed Fingerprint Learning
 
-[Last major update: 01-Feb-2019 (Dataset made public)]
+[Last major update: 06-Feb-2019 (Added new paper; Added tracking folder)]
+
+A machine learning based algorithm that enables positioning estimates from mmWave transmissions.
+
+## Background
 
 With 5G millimeter wave wireless communications, the resulting radiation reflects on most visible
 objects, creating rich multipath environments. The radiation is thus significantly shaped by the obstacles
@@ -22,9 +26,7 @@ below), it is possible to confirm that being in a NLOS position is not a constra
   <img src="images/error_vs_position.PNG" width="480"/>
 </p>
 
-For more information, refer to papers section of this README file. If you find any error, please contact me (joao.gante@tecnico.ulisboa.pt).
-
-
+For more information, refer to papers section of this README file. If you find any mistake, please contact me (joao.gante@tecnico.ulisboa.pt).
 
 
 ## Getting Started
@@ -48,7 +50,7 @@ The data was generated using the [Wireless InSite ray-tracing simulator](https:/
 </p>
 
 
-### Prerequisites
+### Key Prerequisites
 
 - C++ compiler *(if different sampling rates are desired)*
 - Python 3.x
@@ -61,7 +63,8 @@ The data was generated using the [Wireless InSite ray-tracing simulator](https:/
 
 ### Papers
 
-"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- https://arxiv.org/abs/1804.04112 (and VTC Fall 2018)
+"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 (also here: https://arxiv.org/abs/1804.04112)
+"Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 (feel free to email me for an early copy)
 
 ## License
 
