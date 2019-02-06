@@ -1,5 +1,3 @@
-# Tracking [EXPERIMENTAL]
-
 # Tracking - Estimates from Sequences of Beamformed Fingerprints [EXPERIMENTAL]
 
 This folder contains the files related to tracking (estimates from sequences of beamformed fingerprints). To train the system, follow the steps below
