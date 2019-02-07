@@ -79,7 +79,7 @@ test_noise = 6.00    #log-normal distribution = gaussian over dB values
 noise_std_converted = (test_noise * power_scale)
 
 #scaler
-binary_scaler = True    #<--- will use a Normalizer if false
+binary_scaler = True    #<--- will use a Normalizer if false  [warning: Normalizer needs some code refactoring!]
 predicted_input_size = time_slots * beamformings
 
 #Misc. [for other tests]
@@ -97,7 +97,9 @@ assert spatial_undersampling >= 1, "spatial_undersampling cannot be smaller " \
 
 # -> path options: 's' for static, 'p' for pedestrian, 'c' for car
 tracking_folder = 'tracking_data/'
-path_file = tracking_folder + 'paths'
+path_file_train = tracking_folder + 'paths_train'
+path_file_valid = tracking_folder + 'paths_valid'
+path_file_test = tracking_folder + 'paths_test'
 path_options = {'s_paths': True,            # enables static paths
 
                 'p_paths': True,            # enables pedestrian-like paths
@@ -116,24 +118,39 @@ path_options = {'s_paths': True,            # enables static paths
                 #car probability of [no change; full stop; direction adjust; speed adjust] each second
                 'c_move_proba': [0.8, 0.02, 0.05, 0.13],
                 }
-
 assert sum(path_options['p_move_proba']) == 1.0
+assert sum(path_options['c_move_proba']) == 1.0
+
+moving_paths_multiplier = 4.0  #Samples "N*number_of_static_paths" moving paths
+
+parallel_jobs = 2       #uses multiple threads to obtain sequence samples :D
+                        #[best results with 2 jobs in CPUs w/ hyperthreading,
+                        #   it's a memory bound task]
+train_split = 10        #splits an epoch in N sub-epochs (min = 1),
+                        #to alliviate RAM requirements
+train_split *= ((2.0 * moving_paths_multiplier) + 1.0) / 3.0
+train_split = int(train_split)      #Adjusts the split size acording to the number of sampled moving paths
+
+#test & valid length / RAM usage options
+valid_size = 0.1  #Defines the validation set size, relative to the train set size
+test_size = 1.0             #Big test size = good generalization assessment
+n_tests = 2                 #Avg number of times it evaluates a given test path
+test_split = train_split
+
 # Tracking parameters
 ##########################################################
 
 
 ##########################################################
 # TCN parameters
+
 tcn_parameters = {  'batch_size': 64,
-                    'epochs': 50,
                     'learning_rate': 5e-4,
                     'learning_rate_decay': 0.995,
                     'tcn_layers': 2,
                     'tcn_filter_size': 3,
                     'tcn_features': 512,
                     'dropout': 0.0,
-                    # 'mlp_layers': 2,
-                    # 'mlp_neurons': 32
                  }
 
 accumulated_dilation = 0
@@ -141,10 +158,14 @@ for l in range(tcn_parameters['tcn_layers']):
     accumulated_dilation += 2 ** l
 time_steps = 1 + (tcn_parameters['tcn_filter_size'] - 1) * accumulated_dilation
 
-parallel_jobs = 2       #uses multiple threads to obtain sequence samples :D
-                        #[best results with 2 jobs in CPUs w/ hyperthreading,
-                        #   it's a memory bound task]
-train_split = 10        #splits an epoch in N sub-epochs (min = 1), to alliviate RAM requirements
+# The train script evaluates the validation set at every "K*train epoch", where a
+#   "train epoch" is "100.0/train_split"% of an actual epoch over the train set.
+# While it is somewhat expensive, allows us to have some neat control over
+#   the "early stopping". Here we define the early stopping as a function of
+#   "train epochs": if the validation accuracy does not improve over N "K*train
+#   epochs", the training is complete.
+valid_assessment_period = 5
+early_stopping = int(50.0 / float(valid_assessment_period))
+
 # TCN parameters
 ##########################################################
-

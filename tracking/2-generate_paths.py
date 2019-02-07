@@ -84,18 +84,22 @@ def get_possible_positions(labels, grid, scale, shift):
     return valid_locations
 
 
-def get_moving_paths(path_options, path_type, valid_locations, time_steps):
+def get_moving_paths(path_options, path_type, valid_locations, time_steps,
+                     moving_paths_multiplier=1, subsample=None):
     '''
     Given the valid locations and the path options & type, generates as many
-        moving paths as the number of valid_locations. Returns a list
-        of dataset indexes for each path (to sample that path's received
-        radiation, just use those indexes!)
+        moving paths as the number of valid_locations (times an optional
+        multiplier, times subsampling rate). Returns a list of dataset indexes
+        for each path (to sample that path's received radiation, just use those
+        indexes!)
 
     valid_locations - dictionary with format = {(x, y): dataset_index}
     '''
 
     pi = np.pi
-    number_paths = len(valid_locations.keys())
+    number_paths = int(len(valid_locations.keys()) * moving_paths_multiplier)
+    if subsample is not None:
+        number_paths = int(number_paths * subsample)
 
     list_of_valid_locations = list(valid_locations.keys())
     max_x = 0
@@ -206,32 +210,59 @@ def get_moving_paths(path_options, path_type, valid_locations, time_steps):
     return moving_paths
 
 
-def generate_paths(path_options, valid_locations, time_steps):
+def generate_paths(path_options, valid_locations, time_steps,
+                   moving_paths_multiplier=1, subsample=None):
     '''
     Generates a dictionary of paths, given the options (also given as a
     dictionary)
     '''
 
+    #subsample: generates a smaller, subsampled dataset
+    if subsample is not None:
+        assert 0.0 < subsample <= 1.0
+        #subsample == 1.0 has the same effect as subsample == None, but
+        #   subsample == None has simpler code
+        if subsample == 1.0:
+            subsample = None
+
     #Initializes the paths as a dictionary of empty lists, with a field per
     #   path type ('s' for static, 'p' for pedestrian, and 'c' for car)
     paths = {'s': [], 'p': [], 'c': []}
+    number_of_paths = 0
 
     #processes the static paths (just stores the valid locations)
     if path_options['s_paths']:
         print("Getting static paths...")
-        paths['s'] = valid_locations
+        if subsample is not None:
+            subsampled_valid_locations = {}
+            mask = np.random.uniform(size=len(valid_locations))
+            mask[mask < subsample] = 1.0
+            mask[mask < 1.0] = 0.0
+            mask_idx = 0
+            for key, value in valid_locations.items():
+                if mask[mask_idx]:
+                    subsampled_valid_locations[key] = value
+                mask_idx += 1
+            paths['s'] = subsampled_valid_locations
+        else:
+            paths['s'] = valid_locations
+        number_of_paths += len(paths['s'])
 
     #processes the pedestrian paths
     if path_options['p_paths']:
         print("Getting pedestrian paths...")
         paths['p'] = get_moving_paths(path_options, 'p', valid_locations,
-            time_steps)
+            time_steps, moving_paths_multiplier, subsample)
+        number_of_paths += len(paths['p'])
 
     #processes the car paths
     if path_options['c_paths']:
-        print("Getting car paths...")
+        print("\nGetting car paths...")
         paths['c'] = get_moving_paths(path_options, 'c', valid_locations,
-            time_steps)
+            time_steps, moving_paths_multiplier, subsample)
+        number_of_paths += len(paths['c'])
+
+    print("\nThis set contains a total of {} paths".format(number_of_paths))
 
     return paths
 
@@ -252,9 +283,18 @@ if __name__ == "__main__":
         int(spatial_undersampling), shift)
     del labels
 
-    #Gets a dictionary with the desired paths
-    print("\nGenerating the paths dictionary...")
-    paths = generate_paths(path_options, valid_locations, time_steps)
+    #Gets dictionaries with the desired paths
+    print("\nGenerating the train paths dictionary...")
+    paths_train = generate_paths(path_options, valid_locations, time_steps,
+                                 moving_paths_multiplier)
+
+    print("\nGenerating the validation paths dictionary...")
+    paths_valid = generate_paths(path_options, valid_locations, time_steps,
+                                 moving_paths_multiplier, subsample=valid_size)
+
+    print("\nGenerating the test paths dictionary...")
+    paths_test = generate_paths(path_options, valid_locations, time_steps,
+                                moving_paths_multiplier, subsample=test_size)
 
     #If the os path for the desired data doesn't exist, creates it
     if not os.path.exists(tracking_folder):
@@ -262,8 +302,12 @@ if __name__ == "__main__":
 
     #Stores the dictionary of paths
     print("\nStoring the paths ...")
-    with open(path_file, 'wb') as f:
-        pickle.dump(paths, f)
+    with open(path_file_train, 'wb') as f:
+        pickle.dump(paths_train, f)
+    with open(path_file_valid, 'wb') as f:
+        pickle.dump(paths_valid, f)
+    with open(path_file_test, 'wb') as f:
+        pickle.dump(paths_test, f)
 
     #After path generation, prints the execution time
     end = time.time()

@@ -14,7 +14,6 @@ os.environ["CUDA_VISIBLE_DEVICES"]=str(target_gpu)
 # Loads hyperparameters from the tracking parameters
 dictionary = tcn_parameters
 batch_size = dictionary['batch_size']
-epochs = dictionary['epochs'] * train_split
 learning_rate = dictionary['learning_rate']
 learning_rate_decay = dictionary['learning_rate_decay']
 tcn_layers = dictionary['tcn_layers']
