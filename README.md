@@ -56,7 +56,7 @@ The data was generated using the [Wireless InSite ray-tracing simulator](https:/
 
 - C++ compiler *(if different sampling rates are desired)*
 - Python 3.x
-- Tensorflow
+- Tensorflow (used version: 1.10)
 
 
 ## Authors
