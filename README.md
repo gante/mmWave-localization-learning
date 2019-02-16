@@ -1,6 +1,6 @@
 # Beamformed Fingerprint Learning
 
-[Last major update: 06-Feb-2019 (Added new paper; Added tracking folder)]
+[Last major update: 16-Feb-2019 (Added LSTMs to the tracking folder. Can now toggle between TCNs and LSTMs)]
 
 A ML based algorithm that enables accurate positioning from mmWave transmissions - with and without tracking
 
