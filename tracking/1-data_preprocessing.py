@@ -190,10 +190,10 @@ if __name__ == "__main__":
         pickle.dump([features, labels, invalid_slots], f)
 
     #Optional: plots the existing data points on a 2D image
-    to_plot = np.full([int(grid_x+1), int(grid_y+1)], 0.0)
-    for pos in range(labels.shape[0]):
-        x = int(labels[pos,0] * grid_x)
-        y = int((1.0 - labels[pos,1]) * grid_y) #flips y
-        to_plot[x, y] = 1.0
-    plt.imshow(np.transpose(to_plot))
-    plt.show()
+    # to_plot = np.full([int(grid_x+1), int(grid_y+1)], 0.0)
+    # for pos in range(labels.shape[0]):
+        # x = int(labels[pos,0] * grid_x)
+        # y = int((1.0 - labels[pos,1]) * grid_y) #flips y
+        # to_plot[x, y] = 1.0
+    # plt.imshow(np.transpose(to_plot))
+    # plt.show()

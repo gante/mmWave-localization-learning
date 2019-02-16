@@ -137,27 +137,6 @@ test_size = 1.0             #Big test size = good generalization assessment
 n_tests = 2                 #Avg number of times it evaluates a given test path
 test_split = train_split
 
-# Tracking parameters
-##########################################################
-
-
-##########################################################
-# TCN parameters
-
-tcn_parameters = {  'batch_size': 64,
-                    'learning_rate': 5e-4,
-                    'learning_rate_decay': 0.995,
-                    'tcn_layers': 2,
-                    'tcn_filter_size': 3,
-                    'tcn_features': 512,
-                    'dropout': 0.0,
-                 }
-
-accumulated_dilation = 0
-for l in range(tcn_parameters['tcn_layers']):
-    accumulated_dilation += 2 ** l
-time_steps = 1 + (tcn_parameters['tcn_filter_size'] - 1) * accumulated_dilation
-
 # The train script evaluates the validation set at every "K*train epoch", where a
 #   "train epoch" is "100.0/train_split"% of an actual epoch over the train set.
 # While it is somewhat expensive, allows us to have some neat control over
@@ -166,6 +145,47 @@ time_steps = 1 + (tcn_parameters['tcn_filter_size'] - 1) * accumulated_dilation
 #   epochs", the training is complete.
 valid_assessment_period = 5
 early_stopping = int(50.0 / float(valid_assessment_period))
+epochs_hard_cap = 1000  # ~ 8 hours on my system. After epoch 500, the
+                        #   improvement is marginal
+
+# Tracking parameters
+##########################################################
+
+
+
+use_tcn = True #<----------------------------------------------------------------- TCN/LSTM toggle
+
+##########################################################
+# TCN parameters
+if use_tcn:
+    tcn_parameters = {  'batch_size': 64,
+                        'learning_rate': 5e-4,
+                        'learning_rate_decay': 0.995,
+                        'tcn_layers': 2,
+                        'tcn_filter_size': 3,
+                        'tcn_features': 512,
+                        'dropout': 0.0,
+                     }
+
+    time_steps = 7
 
 # TCN parameters
+##########################################################
+
+
+##########################################################
+# LSTM parameters
+else:
+    lstm_parameters = { 'batch_size': 64,
+                        'learning_rate': 5e-5,
+                        'learning_rate_decay': 0.995,
+                        'mlp_layers': 3,
+                        'mlp_neurons': 512,
+                        'lstm_neurons': 512,
+                        'dropout': 0.0,
+                      }
+
+    time_steps = 7
+
+# LSTM parameters
 ##########################################################

@@ -1,7 +1,7 @@
 '''
 TCN_train.py
 
--> Given the "paths" and the sorted dataset, trains a TCN. In the context of
+-> Given the "paths" and the sorted dataset, trains a model. In the context of
     this script, the "validation set" uses the same paths as the training set,
     but with new beamformed fingerprints samples for each position. (i.e.
     measures the system's generalization capability for the seen paths)
@@ -29,13 +29,17 @@ from path_sampling_functions import sample_paths, check_accuracy
 if __name__ == "__main__":
     start = time.time()
 
-    #Loads the TCN definition (which also loads the simulation parameters)
-    print("\nInitializing the TCN graph...")
-    exec(open("TCN_definition.py").read(), globals())
+    #Loads the model definition (which also loads the simulation parameters)
+    print("\nInitializing the model graph...")
+    exec(open("model_definition.py").read(), globals())
     tf_dict = {'distance': distance,
                'X': X,
                'Y': Y,
                'is_training': is_training}
+    if use_tcn:
+        print("A TCN model was initialized!")
+    else:
+        print("A LSTM model was initialized!")
 
     #Loads the sorted dataset and the paths; Creates the scaler.
     print("\nLoading dataset and paths...")
@@ -51,14 +55,20 @@ if __name__ == "__main__":
     else:
         raise NotImplementedError
 
-    #Now that the data is loaded and the TCN is defined, trains the TCN
+    #Now that the data is loaded and the model is defined, trains the model
     print("Starting the TF session... [Using GPU #{0}, sampling with {1} "\
         "thread(s)]".format(target_gpu, parallel_jobs))
 
     saver = tf.train.Saver()
     config = tf.ConfigProto()
-    config.gpu_options.allow_growth=True
+    config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
+
+        print("All parameters:", int(np.sum([np.product([xi.value for xi in
+            x.get_shape()]) for x in tf.global_variables()])))
+        print("Trainable parameters:", int(np.sum([np.product([xi.value for xi in
+            x.get_shape()]) for x in tf.trainable_variables()])))
+        print_progress = True
 
         #Obtains the validation set
         print("Obtaining the validation set", end='', flush=True)
@@ -74,20 +84,17 @@ if __name__ == "__main__":
         epochs_completed = 0
         keep_training = True
         epochs_not_improving = 0
-        best_valid_distantce = 999999.9
+        best_valid_distance = 999999.9
         best_95_distance = 999999.9
         sess.run(tf.global_variables_initializer())
 
-        session_name = 'tcn_noise_' + str(int(test_noise)) + '_length_' + str(time_steps)
+        model_type = 'tcn' if use_tcn else 'lstm'
+        session_name = model_type + '_noise_' + str(int(test_noise)) + \
+            '_length_' + str(time_steps)
         if not os.path.exists('results/'):
             os.makedirs('results/')
 
         print("\nStarting the training!")
-        print("All parameters:", int(np.sum([np.product([xi.value for xi in
-            x.get_shape()]) for x in tf.global_variables()])))
-        print("Trainable parameters:", int(np.sum([np.product([xi.value for xi in
-            x.get_shape()]) for x in tf.trainable_variables()])))
-        print_progress = True
         train_sample_args = [paths_train, features, labels, time_steps,
             noise_std_converted, min_pow_cutoff, scaler, 1.0/train_split,
             print_progress, parallel_jobs]
@@ -117,7 +124,10 @@ if __name__ == "__main__":
                 if end_idx > len(X_train):
                     #for LSTMs, the last batch can't be executed if the batch
                     #   size differs
-                    end_idx = len(X_train)
+                    if use_tcn:
+                        end_idx = len(X_train)
+                    else:
+                        continue
 
                 #Expected input shape for the input:
                 #   (shape=[batch_size/None, time_steps, single_element_shape])
@@ -143,14 +153,16 @@ if __name__ == "__main__":
                     .format(epochs_completed-1, avg_distance, distance_95,
                     learning_rate))
 
-                #Stores the model if it has the best performance. Otherwise,
-                #   evaluates the early stopping mechanism
-                if avg_distance < best_valid_distantce:
-                    best_valid_distantce = avg_distance
+                #Stores the model if it beats the previous best model by more
+                #   than 1%. Otherwise, evaluates the early stopping mechanism
+                if avg_distance < (best_valid_distance * 0.99):
+                    best_valid_distance = avg_distance
                     best_95_distance = distance_95
                     epochs_not_improving = 0
                     #saves the model
                     saver.save(sess, 'results/' + session_name)
+                elif epochs_completed > epochs_hard_cap:
+                    keep_training = False
                 else:
                     epochs_not_improving += 1
                     if epochs_not_improving >= early_stopping:
@@ -161,10 +173,10 @@ if __name__ == "__main__":
         #---------------------------------------------------------------------- [end of training]
         #----------------------------------------------------------------------
 
-    #After training the TCN, prints the execution time
+    #After training the model, prints the execution time
     end = time.time()
     exec_time = (end-start)
     print("\nEnd of the training, printing stored results.")
-    print("Validation distance (m) = {1:.4f},   95% percentile (m) = {2:.4f}"\
-        .format(best_valid_distantce, best_95_distance))
+    print("Validation distance (m) = {0:.4f},   95% percentile (m) = {1:.4f}"\
+        .format(best_valid_distance, best_95_distance))
     print("Execution time = {0:.4}s".format(exec_time))
