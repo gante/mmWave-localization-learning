@@ -35,7 +35,8 @@ if __name__ == "__main__":
 
     #Runs "simulation_parameters.py" and keeps its variables
     exec(open("simulation_parameters.py").read(), globals())
-    batch_size = tcn_parameters['batch_size']
+    batch_size = tcn_parameters['batch_size'] if use_tcn else \
+        lstm_parameters['batch_size']
 
     #Loads the sorted dataset and the paths; Creates the scaler.
     print("\nLoading dataset and paths...")
@@ -54,7 +55,9 @@ if __name__ == "__main__":
     with tf.Session(config=config) as sess:
 
         # defines the loader ("saver" in TF language)
-        session_name = 'tcn_noise_' + str(int(test_noise)) + '_length_' + str(time_steps)
+        model_type = 'tcn' if use_tcn else 'lstm'
+        session_name = model_type + '_noise_' + str(int(test_noise)) + \
+            '_length_' + str(time_steps)
         saver = tf.train.import_meta_graph('results/' + session_name + '.meta')
         saver.restore(sess, 'results/' + session_name)
 
