@@ -5,7 +5,18 @@ Plots paths on the map. [The internal functions depend on 2-generate_paths.py]
 import time
 import pickle
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
+
+
+#Constants to define the output plot
+NUMBER_PATHS = 5
+PED_MARKER = 'o'
+PED_COLOR = 'red'
+PED_MARKER_SIZE = 3
+CAR_MARKER = 's'
+CAR_COLOR = 'mediumseagreen'
+CAR_MARKER_SIZE = 3
 
 
 def valid_locations_to_matrix(valid_locations):
@@ -50,7 +61,7 @@ if __name__ == "__main__":
     start = time.time()
 
     print("Loading the paths...")
-    with open('../tracking_data/paths', 'rb') as f:
+    with open('../tracking_data/paths_test', 'rb') as f:
         paths = pickle.load(f)
 
     #Gets the valid locations matrix
@@ -65,14 +76,31 @@ if __name__ == "__main__":
     ax.set_ylabel('Y (m)')
     ax.set_xlabel('X (m)')
 
-    #fetches and plots paths
-    for i in range(5):
+    #fetches and plots PEDESTRIAN paths
+    for i in range(NUMBER_PATHS):
         rand_idx = np.random.choice(len(paths['p']))
         considered_path = paths['p'][rand_idx]
         x_sequence, y_sequence = get_path_positions(inverse_index_mapping, considered_path)
         for idx in range(len(x_sequence)):
-            ax.plot(x_sequence[idx], y_sequence[idx], 'r^')
+            ax.plot(x_sequence[idx], y_sequence[idx], marker=PED_MARKER,
+                markersize=PED_MARKER_SIZE, color=PED_COLOR)
             # ^ please notice the inverse order [yes, I need to fix this indexing :( ]
+
+    #fetches and plots CAR paths
+    for i in range(NUMBER_PATHS):
+        rand_idx = np.random.choice(len(paths['c']))
+        considered_path = paths['c'][rand_idx]
+        x_sequence, y_sequence = get_path_positions(inverse_index_mapping, considered_path)
+        for idx in range(len(x_sequence)):
+            ax.plot(x_sequence[idx], y_sequence[idx], marker=CAR_MARKER,
+                markersize=CAR_MARKER_SIZE, color=CAR_COLOR)
+
+    legend_elements = [matplotlib.lines.Line2D([0], [0], color=PED_COLOR,
+                            marker=PED_MARKER, linestyle='', label='Pedestrians'),
+                       matplotlib.lines.Line2D([0], [0], color=CAR_COLOR,
+                            marker=CAR_MARKER, linestyle='', label='Vehicles')]
+
+    ax.legend(handles=legend_elements, loc='lower left')
 
     plt.savefig('paths_map.pdf', format='pdf')
 

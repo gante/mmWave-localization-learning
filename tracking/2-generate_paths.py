@@ -283,6 +283,8 @@ if __name__ == "__main__":
         int(spatial_undersampling), shift)
     del labels
 
+    print("\nSequence length: ", time_steps)
+
     #Gets dictionaries with the desired paths
     print("\nGenerating the train paths dictionary...")
     paths_train = generate_paths(path_options, valid_locations, time_steps,

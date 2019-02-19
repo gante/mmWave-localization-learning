@@ -60,6 +60,7 @@ if __name__ == "__main__":
             '_length_' + str(time_steps)
         saver = tf.train.import_meta_graph('results/' + session_name + '.meta')
         saver.restore(sess, 'results/' + session_name)
+        print("Loading model with name = '{}'".format(session_name))
 
         # Redefines the needed stuff
         # [i.e. placeholders AND operations, that were saved by name]
