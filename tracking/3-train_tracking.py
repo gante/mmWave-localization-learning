@@ -143,7 +143,8 @@ if __name__ == "__main__":
 
             if epochs_completed % valid_assessment_period == 0:
                 # Assesses the validation performance
-                distance_output = check_accuracy(X_valid, y_valid, batch_size, tf_dict)
+                distance_output = check_accuracy(X_valid, y_valid, batch_size,
+                                                 tf_dict, use_tcn)
                 avg_distance = np.mean(distance_output)
                 sorted_distance = np.sort(distance_output)
                 distance_95 = sorted_distance[int(len(distance_output) * 0.95)]

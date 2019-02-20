@@ -209,7 +209,7 @@ def apply_noise_and_scaler(sequence, noise_std_converted, scaler,
     return noisy_sequence
 
 
-def check_accuracy(X_valid, y_valid, batch_size, tf_dict):
+def check_accuracy(X_valid, y_valid, batch_size, tf_dict, use_tcn):
     '''Returns the distances vector of a given set'''
 
     #Expands the TF_dict (containg graph references)
@@ -225,9 +225,13 @@ def check_accuracy(X_valid, y_valid, batch_size, tf_dict):
 
         start_idx = batch_idx * batch_size
         end_idx = (batch_idx+1) * batch_size
-        #This system can only run on complete batches
+
         if end_idx > len(X_valid):
-            break
+            if not use_tcn:
+                #This system can only run on complete batches
+                break
+            else:
+                end_idx = len(X_valid)
 
         #Evaluates the distance
         distance_output.append(distance.eval(feed_dict={

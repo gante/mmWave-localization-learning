@@ -145,8 +145,8 @@ test_split = train_split
 #   epochs", the training is complete.
 valid_assessment_period = 5
 early_stopping = int(50.0 / float(valid_assessment_period))
-epochs_hard_cap = 1000  # ~ 8 hours on my system. After epoch 500, the
-                        #   improvement is marginal
+epochs_hard_cap = train_split * 100  # ~ 8 hours on my system. After epoch 500, the
+                                     #   improvement is marginal
 
 # Tracking parameters
 ##########################################################

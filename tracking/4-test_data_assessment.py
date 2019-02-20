@@ -33,6 +33,13 @@ def print_partial_stats(path_type, distance_vector):
 if __name__ == "__main__":
     start = time.time()
 
+    assert os.path.exists('results/static_results.pkl') == False, \
+        "There cannot be previous results (this script appends to files)"
+    assert os.path.exists('results/ped_results.pkl') == False, \
+        "There cannot be previous results (this script appends to files)"
+    assert os.path.exists('results/car_results.pkl') == False, \
+        "There cannot be previous results (this script appends to files)"
+
     #Runs "simulation_parameters.py" and keeps its variables
     exec(open("simulation_parameters.py").read(), globals())
     batch_size = tcn_parameters['batch_size'] if use_tcn else \
@@ -78,9 +85,19 @@ if __name__ == "__main__":
         #   'n_test' times on average. However, to avoid consuming too much RAM,
         #   each round is split in 'test_split' parts.
         prediction_rounds = n_tests * test_split
+
         distance_output_static = []
         distance_output_ped = []
         distance_output_car = []
+
+        y_output_static = []
+        y_output_ped = []
+        y_output_car = []
+
+        non_zero_static = []
+        non_zero_ped = []
+        non_zero_car = []
+
         for i in range(prediction_rounds):
             print("\nPrediction round #{0} out of {1}...".format(i+1, prediction_rounds))
             X_test, y_test, paths_delimiter = sample_paths(paths, features,
@@ -90,32 +107,56 @@ if __name__ == "__main__":
 
             #Static paths
             if paths_delimiter['s'] > 0:
-                distance_output_static.extend(check_accuracy(
+                this_distance_static = check_accuracy(
                     X_test[0:paths_delimiter['s']],
                     y_test[0:paths_delimiter['s']],
-                    batch_size, tf_dict))
+                    batch_size, tf_dict, use_tcn)
+                distance_output_static += this_distance_static
                 print_partial_stats('Static paths    ', distance_output_static)
+                y_output_static = y_test[0:paths_delimiter['s']]
+                non_zero_static = np.sum(X_test[0:paths_delimiter['s']], axis=(1,2))
+                assert len(non_zero_static) == len(y_output_static)
+                assert len(this_distance_static) == len(non_zero_static)
 
             #Pedestrian paths
             if paths_delimiter['p'] > paths_delimiter['s']:
-                distance_output_ped.extend(check_accuracy(
+                this_distance_ped = check_accuracy(
                     X_test[paths_delimiter['s']:paths_delimiter['p']],
                     y_test[paths_delimiter['s']:paths_delimiter['p']],
-                    batch_size, tf_dict))
+                    batch_size, tf_dict, use_tcn)
+                distance_output_ped += this_distance_ped
                 print_partial_stats('Pedestrian paths', distance_output_ped)
+                y_output_ped = y_test[paths_delimiter['s']:paths_delimiter['p']]
+                non_zero_ped = np.sum(X_test[paths_delimiter['s']:paths_delimiter['p']], axis=(1,2))
+                assert len(non_zero_ped) == len(y_output_ped)
+                assert len(this_distance_ped) == len(non_zero_ped)
 
             #Car paths
             if paths_delimiter['c'] > paths_delimiter['p']:
-                distance_output_car.extend(check_accuracy(
+                this_distance_car = check_accuracy(
                     X_test[paths_delimiter['p']:paths_delimiter['c']],
                     y_test[paths_delimiter['p']:paths_delimiter['c']],
-                    batch_size, tf_dict))
+                    batch_size, tf_dict, use_tcn)
+                distance_output_car += this_distance_car
                 print_partial_stats('Car paths       ', distance_output_car)
+                y_output_car = y_test[paths_delimiter['p']:paths_delimiter['c']]
+                non_zero_car = np.sum(X_test[paths_delimiter['p']:paths_delimiter['c']], axis=(1,2))
+                assert len(non_zero_car) == len(y_output_car)
+                assert len(this_distance_car) == len(non_zero_car)
 
             print_partial_stats('All paths       ', distance_output_car + \
                 distance_output_ped + distance_output_static)
 
-    #After prediction, prints the execution time
+            #After each prediction, stores the results
+            print("Storing results...")
+            with open('results/static_results.pkl', 'ab') as f:
+                pickle.dump([this_distance_static, y_output_static, non_zero_static], f)
+            with open('results/ped_results.pkl', 'ab') as f:
+                pickle.dump([this_distance_ped, y_output_ped, non_zero_ped], f)
+            with open('results/car_results.pkl', 'ab') as f:
+                pickle.dump([this_distance_car, y_output_car, non_zero_car], f)
+
+    #After all predictions, prints the execution time
     end = time.time()
     exec_time = (end-start)
     print("Execution time = {0:.4}s".format(exec_time))
