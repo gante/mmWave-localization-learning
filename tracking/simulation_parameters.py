@@ -75,7 +75,7 @@ if removed_ts:
     #removed slots: [0, slice_weak_TS_start_remove through (max_time * sample_freq)]
 
 #noise STD
-test_noise = 8.00    #log-normal distribution = gaussian over dB values
+test_noise = 6.00    #log-normal distribution = gaussian over dB values
 noise_std_converted = (test_noise * power_scale)
 
 #scaler
