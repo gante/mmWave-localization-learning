@@ -20,7 +20,7 @@ you should obtain the roughly following results:
   <img src="../images/histogram_tracking.PNG" width="480"/>
 </p>
 
-The code to control the paths is completely editable. As it stands, it generates two types of paths, as seen below.
+The code to control the paths is completely editable. As it stands, it generates two non-static types of paths, as seen below.
 
 <p align="center">
   <img src="../images/paths.PNG" width="480"/>
