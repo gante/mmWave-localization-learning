@@ -78,7 +78,7 @@ The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Ma
 
 "Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 (feel free to email me for an early copy)
 
-Tracking-related paper - comming soon :)
+Tracking-related paper - coming soon :)
 
 ## License
 
