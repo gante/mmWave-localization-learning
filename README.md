@@ -74,9 +74,9 @@ The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Ma
 
 ## Papers
 
-"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 (also here: https://arxiv.org/abs/1804.04112)
+"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 [ieeexplore_link](https://ieeexplore.ieee.org/document/8690987) (also here: [arxiv_link](https://arxiv.org/abs/1804.04112))
 
-"Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 (feel free to email me for an early copy)
+"Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 [ieeexplore_link](https://ieeexplore.ieee.org/document/8683782)
 
 Tracking-related paper - coming soon :)
 
