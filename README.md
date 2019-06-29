@@ -76,7 +76,7 @@ The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Ma
 
 (From newest to oldest)
 
-"Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G" --- Neural Processing Letters (to appear, will update link soon). Also available [here](https://drive.google.com/open?id=19P7Ebg80pVqyHNkfPDQNweozl4k4S6RC).
+"Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G" --- Neural Processing Letters (to appear, will update link soon). A post-peer-review, pre-copyedit version is also available [here](https://drive.google.com/open?id=19P7Ebg80pVqyHNkfPDQNweozl4k4S6RC).
 
 "Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 [ieeexplore_link](https://ieeexplore.ieee.org/document/8683782)
 
