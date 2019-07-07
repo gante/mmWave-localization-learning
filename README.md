@@ -6,7 +6,7 @@ A ML based algorithm that enables accurate positioning from mmWave transmissions
 the corresponding [papers](#papers), check their section.
 
 <p align="center">
-  <img src="images/error_vs_position.PNG" width="480"/>
+  <img src="_repo_images/error_vs_position.PNG" width="480"/>
 </p>
 
 ## Background
@@ -26,7 +26,7 @@ and promising alternative for outdoor positioning.
 
 
 <p align="center">
-  <img src="images/bff_examples.PNG" width="480"/>
+  <img src="_repo_images/bff_examples.PNG" width="480"/>
 </p>
 
 
@@ -57,7 +57,7 @@ The data was generated using the [Wireless InSite ray-tracing simulator](https:/
 The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Management Center](https://goo.gl/maps/xrqvT9VS59K2).
 
 <p align="center">
-  <img src="images/propagation.PNG" width="400"/>
+  <img src="_repo_images/propagation.PNG" width="400"/>
 </p>
 
 
