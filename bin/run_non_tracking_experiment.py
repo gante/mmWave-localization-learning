@@ -8,8 +8,6 @@ The arguments are loaded from a .yaml file, which is the input argument of this 
 import sys
 import yaml
 
-from mmwave_positioning.data_operations import Preprocessor
-
 def main():
     """Main block of code, which runs the experiment"""
 
@@ -20,10 +18,7 @@ def main():
     with open(sys.argv[1], "r") as yaml_config_file:
         experiment_config = yaml.load(yaml_config_file)
 
-    # Run the data_preprocessor
-    data_preprocessor = Preprocessor(experiment_config)
-    data_preprocessor()
-    del data_preprocessor
+    # Load the preprocessed data, and double-checks its `sha_id`
 
 
 if __name__ == '__main__':

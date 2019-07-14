@@ -1,5 +1,7 @@
 """
-Contains a class that converts the pre-processed binary file into a numpy array
+Contains a class that converts the pre-processed binary file into a numpy array.
+The logic behing each conversion step is thoroughly document through comments
+in the code.
 """
 
 import pickle
@@ -13,42 +15,36 @@ import matplotlib.pyplot as plt
 class Preprocessor():
     """
     Reads a pre-processed binary file (see the README) into a pretty numpy array,
-    which can be feed to ML model
+    which can be feed to a ML model
+
+    :param settings: a dictionary of simulation settings
     """
-    def __init__(self):
-        print("\n------------------------------------------------------------")
-        print("PLEASE DOUBLE-CHECK THE SIMULATION PARAMETERS!")
-        print("------------------------------------------------------------\n")
+    def __init__(self, settings):
+        self.data_file = settings['data_file']
 
-        #Runs "simulation_parameters.py" and keeps its variables
-        exec(open("simulation_parameters.py").read(), globals())
+        # Inputs that dictate the dataset ID:
+        self.max_time = settings['max_time']
+        self.sample_freq = settings['sample_freq']
+        self.beamformings = settings['beamformings']
 
-    def __call__(self):
+    def create_bff_dataset(self):
         """
-        Runs the data preprocessing, given the parameters loaded in __init__()
+        Creates a BFF experiments-ready dataset. The dataset contains X, the matrix
+        containing the received radiation, and y, the true position for that received
+        radiation.
+
+        :returns: X, y. X is a matrix with dimentions (number_of_positions x
+            radiation_samples_per_position). y is matrix with dimentions (number_of_positions x 2)
+            The radiation samples per position's size is given by the number of used beamformings
+            times the sampling frequency time the receiving time per beamforming
         """
-        time_slots = max_time * sample_freq
-        input_size = time_slots * beamformings
+        time_slots = self.max_time * self.sample_freq
+        input_size = time_slots * self.beamformings
         input_w_labels = int(input_size + 2)
-
-        #Loads the binary dataset
-        print("Loading the binary dataset...")
-        with open(data_file, mode='rb') as file:
-            data_binary = file.read()
-            file.close()
-
-        #Converts the binary dataset into float 32
-        print("Converting the binary to float_32...")
-        print("[this may take a couple of minutes and it will not print any progress]")
-        binary_size = os.path.getsize(data_file)
-        num_elements = int(binary_size/4)
-        data = struct.unpack('f'*num_elements, data_binary)
-        del data_binary
 
         #Converts the dataset into features/labels
         print("Converting the dataset into features/labels...")
-        features, labels = data_to_dataset(data, input_w_labels)
-        del data
+        features, labels = _data_to_dataset(input_w_labels)
 
         #Converting the features/labels into numpy arrays
         print("\nConverting the features/labels into numpy arrays...")
@@ -156,10 +152,27 @@ class Preprocessor():
         # plt.imshow(np.transpose(to_plot))
         # plt.show()
 
-    def _data_to_dataset(self, data, input_w_labels):
+    def _data_to_dataset(self, input_w_labels):
         """
-        Converts the raw (floating point) input data into features and labels
+        `create_bff_dataset` auxiliary function. Converts the raw (floating point)
+        input data into features and labels, that will be further filtered
+
+        :param input_w_labels: length of the input data for each position in the dataset
         """
+
+        # Loads the binary mode dataset (the step that creates this binary data will
+        # be rewritten in python in the near future)
+        print("Loading the binary dataset...")
+        with open(self.data_file, mode='rb') as file:
+            data_binary = file.read()
+
+        #Converts the binary dataset into float 32
+        print("Converting the binary to float_32...")
+        print("[this may take a couple of minutes and it will not print any progress]")
+        binary_size = os.path.getsize(self.data_file)
+        num_elements = int(binary_size/4)
+        data = struct.unpack('f'*num_elements, data_binary)
+        del data_binary
 
         num_positions = int(num_elements / input_w_labels)
         features = []
@@ -184,16 +197,16 @@ class Preprocessor():
                     item /= (grid_y)
                     tmp_labels.append(item)
                 else:
-    #Important notes here:
-    #1) item == 0 -> there is no data here (there are no values > 0)
-    #2) The check for the minimum power threshold (e.g. -100 dBm) is performed
-    #   after the noise is added, not here.
-    #3) Nevertheless, to speed up the code, filters out values with very little
-    #   power. For the default simulation parameters, this filters samples with
-    #   less than -170 dBm. Since the default "minimum_power" is -125 dBm [check
-    #   simulation_parameters.py for the meaning of this variable], this means
-    #   we can reliably test (log-normal) noises with STD up to 15 dB [margin =
-    #   (-125) - -170 = 45 dB = 3*STD of 15 dB]
+        #Important notes here:
+        #1) item == 0 -> there is no data here (there are no values > 0)
+        #2) The check for the minimum power threshold (e.g. -100 dBm) is performed
+        #   after the noise is added, not here.
+        #3) Nevertheless, to speed up the code, filters out values with very little
+        #   power. For the default simulation parameters, this filters samples with
+        #   less than -170 dBm. Since the default "minimum_power" is -125 dBm [check
+        #   simulation_parameters.py for the meaning of this variable], this means
+        #   we can reliably test (log-normal) noises with STD up to 15 dB [margin =
+        #   (-125) - -170 = 45 dB = 3*STD of 15 dB]
                     if(item < 0 and item > -(power_offset)):
                         tmp_features.append((item+power_offset) * power_scale)
                     else:
@@ -204,3 +217,8 @@ class Preprocessor():
             labels.append(tmp_labels)
 
         return features, labels
+
+    def create_dataset_id(self):
+        """
+        """
+        pass

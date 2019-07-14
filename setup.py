@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='mmwave_positioning',
+    name='bff_positioning',
     version='0.1',
     description='A ML-based algorithm that enables accurate positioning from mmWave '
         'transmissions - with and without tracking',
