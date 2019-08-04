@@ -12,7 +12,7 @@ data_parameters:
     pos_grid: [400.0, 400.0]
     pos_shift: [183.0, 176.0]
     keep_timeslots: [1, 82]
-    has_graph_interface: True
+    run_sanity_checks: True
 
 ml_parameters:
     test: "a"

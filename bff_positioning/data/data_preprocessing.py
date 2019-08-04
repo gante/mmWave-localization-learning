@@ -22,7 +22,7 @@ class Preprocessor():
     def __init__(self, settings):
         self.input_file = settings['input_file']
         self.preprocessed_file = settings['preprocessed_file']
-        self.has_graph_interface = settings['has_graph_interface']
+        self.run_sanity_checks = settings['run_sanity_checks']
 
         # Inputs that dictate the dataset ID:
         self.max_time = settings['max_time']
@@ -225,7 +225,7 @@ class Preprocessor():
             pickle.dump([self.features, self.labels, self.dataset_id], data_file)
 
         # Optional: plots the existing data points on a 2D image
-        if self.has_graph_interface:
+        if self.run_sanity_checks:
             logging.info("Preparing plot to double-check existing data points...")
             to_plot = np.full([int(self.pos_grid[0])+1, int(self.pos_grid[1])+1], 0.0)
             for pos_idx in tqdm(range(self.labels.shape[0])):
