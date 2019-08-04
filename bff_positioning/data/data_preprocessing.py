@@ -10,9 +10,8 @@ import struct
 import logging
 import hashlib
 import numpy as np
-# import matplotlib.pyplot as plt
 from tqdm import tqdm
-
+import matplotlib
 
 class Preprocessor():
     """ Reads a pre-processed binary file (see the README) into a pretty numpy array,
@@ -54,7 +53,7 @@ class Preprocessor():
             if target_dataset_id == self.dataset_id:
                 dataset_exists = True
                 logging.info("The dataset already exists in %s, skipping the dataset creation "
-                    "steps", self.preprocessed_file)
+                    "steps!", self.preprocessed_file)
         return dataset_exists
 
     def create_bff_dataset(self):
@@ -141,11 +140,11 @@ class Preprocessor():
                 item = data[data_start_pos + data_idx]
                 if data_idx == 0:
                     item += x_shift
-                    item /= (x_grid)
+                    item /= x_grid
                     tmp_labels.append(item)
                 elif data_idx == 1:
                     item += y_shift
-                    item /= (y_grid)
+                    item /= y_grid
                     tmp_labels.append(item)
                 else:
             # Important notes regarding feature data:
@@ -226,13 +225,21 @@ class Preprocessor():
             pickle.dump([self.features, self.labels, self.dataset_id], data_file)
 
         # Optional: plots the existing data points on a 2D image
-        # to_plot = np.full([int(grid_x+1), int(grid_y+1)], 0.0)
-        # for pos in range(labels.shape[0]):
-            # x = int(labels[pos,0] * grid_x)
-            # y = int((1.0 - labels[pos,1]) * grid_y) #flips y
-            # to_plot[x, y] = 1.0
-        # plt.imshow(np.transpose(to_plot))
-        # plt.show()
+        if self.has_graph_interface:
+            logging.info("Preparing plot to double-check existing data points...")
+            to_plot = np.full([int(self.pos_grid[0])+1, int(self.pos_grid[1])+1], 0.0)
+            for pos_idx in tqdm(range(self.labels.shape[0])):
+                pos_x = int(self.labels[pos_idx, 0] * self.pos_grid[0])
+                pos_y = int(self.labels[pos_idx, 1] * self.pos_grid[1])
+                to_plot[pos_x, 400-pos_y] = 1.0 #flips y
+            # Local import to avoid messing non-local interfaces
+            matplotlib.use('agg')
+            import matplotlib.pyplot as plt
+            plt.imshow(np.transpose(to_plot))
+            image_locaton = os.path.join(target_folder, 'existing_data_points.pdf')
+            plt.savefig(image_locaton)
+            logging.info("Done! (Check %s - this image usually comes out with some weird lines, "
+                "but the data is fine, as you'll see in the following steps)", image_locaton)
 
 def get_dataset_id(settings):
     """ Creates and returns an unique ID, given the data parameters.

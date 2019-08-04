@@ -3,7 +3,7 @@ description: Parameters used to train a CNN for the BFF problem
 data_parameters:
     #input_file: '../data_preprocessing/data_processed/final_table'
     input_file: '../local_run/data/final_table'
-    preprocessed_file: '../local_run/data/tf_dataset'
+    preprocessed_file: '../local_run/data/preprocessed_dataset'
     max_time: 6
     sample_freq: 20
     beamformings: 32

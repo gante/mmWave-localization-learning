@@ -33,7 +33,7 @@ def main():
         # Run the data_preprocessor
         data_preprocessor.create_bff_dataset()
 
-        # Stores the processed data and a `sha_id`. That id is based on the simulation
+        # Stores the processed data and a id. That id is based on the simulation
         # settings for the preprocessing part, and it's used to make sure future uses
         # of this preprocessed data match the desired simulation settings
         data_preprocessor.store_dataset()
