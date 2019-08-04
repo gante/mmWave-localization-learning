@@ -23,6 +23,7 @@ class Preprocessor():
     def __init__(self, settings):
         self.input_file = settings['input_file']
         self.preprocessed_file = settings['preprocessed_file']
+        self.has_graph_interface = settings['has_graph_interface']
 
         # Inputs that dictate the dataset ID:
         self.max_time = settings['max_time']
@@ -40,6 +41,21 @@ class Preprocessor():
         self.features_size = self.time_slots * self.beamformings
         self.features = None
         self.labels = None
+
+    def check_existing_dataset(self):
+        """ Checks whether the dataset we are trying to create already exists
+        :returns: Boolean flag, with `True` meaning that the dataset already exists
+        """
+        dataset_exists = False
+        if os.path.isfile(self.preprocessed_file):
+            with open(self.preprocessed_file, 'rb') as dataset_file:
+                _, _, target_dataset_id = pickle.load(dataset_file)
+
+            if target_dataset_id == self.dataset_id:
+                dataset_exists = True
+                logging.info("The dataset already exists in %s, skipping the dataset creation "
+                    "steps", self.preprocessed_file)
+        return dataset_exists
 
     def create_bff_dataset(self):
         """ Creates a BFF experiments-ready dataset. The dataset contains `X`, the matrix
@@ -59,7 +75,7 @@ class Preprocessor():
         features, labels = self._data_to_dataset(sample_size)
 
         # Converting the features/labels into numpy arrays
-        logging.info("Converting the features/labels into numpy arrays...")
+        logging.info("Converting features/labels into numpy arrays...")
         self.features = np.array(features)
         self.labels = np.array(labels)
         del features, labels
@@ -93,13 +109,13 @@ class Preprocessor():
 
         # Loads the binary mode dataset (the step that creates this binary data will
         # be rewritten in python in the near future)
-        logging.info("Loading the binary dataset...")
+        logging.info("Loading the binary dataset from %s...", self.input_file)
         with open(self.input_file, mode='rb') as file:
             data_binary = file.read()
 
         # Converts the binary dataset into float 32
-        logging.info("Converting the binary to float_32...")
-        logging.info("[this may take a couple of minutes and it will not print any progress]")
+        logging.info("Converting the binary data to float_32...")
+        logging.info("[** this may take a couple of minutes and it will not print any progress **]")
         binary_size = os.path.getsize(self.input_file)
         size_bytes = int(binary_size/4)
         data = struct.unpack('f'*size_bytes, data_binary)
@@ -110,6 +126,7 @@ class Preprocessor():
         labels = []
 
         # For each sample in the data
+        logging.info("Creating features and labels from the float_32 data...")
         for sample_idx in tqdm(range(num_samples)):
 
             tmp_features = []
@@ -141,7 +158,7 @@ class Preprocessor():
             #   an example for the meaning of this variable], this means we can reliably test
             #   (log-normal) noises with STD up to 15 dB [margin = (-125) - -170 = 45 dB =
             #   3*STD of 15 dB]
-                    if item < 0 and item > -(self.power_offset):
+                    if -(self.power_offset) < item < 0:
                         tmp_features.append((item + self.power_offset) * self.power_scale)
                     else:
                         assert item <= 0.0, "There cannot be any value here above 0.0 (got {})"\
@@ -160,7 +177,7 @@ class Preprocessor():
         """
         if self.keep_timeslots:
             logging.warning("Removing unwanted timeslots (keeping timeslots with indexes between"
-                "'%s' and '%s-1')", self.keep_timeslots[0], self.keep_timeslots[1])
+                " '%s' and '%s')", self.keep_timeslots[0], self.keep_timeslots[1]-1)
 
             mask = np.ones(self.features.shape[1], dtype=bool)
             ts_to_keep = [ts for ts in range(*self.keep_timeslots)]
@@ -168,7 +185,7 @@ class Preprocessor():
 
             logging.info("Time slots to remove: %s", ts_to_delete)
 
-            for i in range(self.features.shape[1]):
+            for i in tqdm(range(self.features.shape[1])):
                 # DIM 1 = BF, DIM 2 = TS
                 if i % self.time_slots in ts_to_delete:
                     mask[i] = False
@@ -186,7 +203,7 @@ class Preprocessor():
         mask = np.ones(self.features.shape[0], dtype=bool)
         removed_pos = 0
 
-        for i in range(self.features.shape[0]):
+        for i in tqdm(range(self.features.shape[0])):
             if sum(self.features[i, :]) == 0:
                 mask[i] = False
                 removed_pos += 1
@@ -200,7 +217,11 @@ class Preprocessor():
         """
         # Final data reports
         logging.info("Usable positions: %s", self.features.shape[0])
-        print("Storing the result ...")
+        target_folder = os.path.split(self.preprocessed_file)[0]
+        if not os.path.exists(target_folder):
+            logging.info("Target folder (%s) not found, creating it...", target_folder)
+            os.makedirs(target_folder)
+        logging.info("Storing the result ...")
         with open(self.preprocessed_file, 'wb') as data_file:
             pickle.dump([self.features, self.labels, self.dataset_id], data_file)
 
@@ -228,7 +249,19 @@ def get_dataset_id(settings):
         settings['pos_shift'],
         settings['keep_timeslots'],
     ]
+
     hash_sha256 = hashlib.sha256()
     for feature in hashing_features:
-        hash_sha256.update(bytes(feature))
+        if isinstance(feature, list):
+            inner_features = feature
+        else:
+            inner_features = [feature]
+
+        for item in inner_features:
+            if isinstance(item, float):
+                item = "{:.4f}".format(item)
+                hash_sha256.update(bytes(item, encoding='utf8'))
+            else:
+                hash_sha256.update(bytes(item))
+
     return hash_sha256.hexdigest()

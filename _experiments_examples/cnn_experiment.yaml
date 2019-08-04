@@ -1,0 +1,18 @@
+description: Parameters used to train a CNN for the BFF problem
+
+data_parameters:
+    #input_file: '../data_preprocessing/data_processed/final_table'
+    input_file: '../local_run/data/final_table'
+    preprocessed_file: '../local_run/data/tf_dataset'
+    max_time: 6
+    sample_freq: 20
+    beamformings: 32
+    power_offset: 170
+    power_scale: 0.01
+    pos_grid: [400.0, 400.0]
+    pos_shift: [183.0, 176.0]
+    keep_timeslots: [1, 82]
+    has_graph_interface: True
+
+ml_parameters:
+    test: "a"
