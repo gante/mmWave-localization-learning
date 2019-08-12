@@ -12,7 +12,7 @@ import yaml
 from bff_positioning.data import Preprocessor
 
 def main():
-    """Main block of code, which runs the experiment"""
+    """Main block of code, which runs the data-preprocessing"""
 
     logging.basicConfig(level="INFO")
 

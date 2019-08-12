@@ -135,7 +135,7 @@ class Preprocessor():
             # For each data item in the sample
             # (0 = Position data - X)
             # (1 = Position data - Y)
-            # (2 ... sample_size-1 = Feature data)
+            # (2, ..., sample_size-1 = Feature data)
             for data_idx in range(sample_size):
                 item = data[data_start_pos + data_idx]
                 if data_idx == 0:
@@ -227,12 +227,15 @@ class Preprocessor():
         # Optional: plots the existing data points on a 2D image
         if self.run_sanity_checks:
             logging.info("Preparing plot to double-check existing data points...")
+            # Creates (N+1) by (M+1) matrix. This means that its indexes go from 0 through N/M
             to_plot = np.full([int(self.pos_grid[0])+1, int(self.pos_grid[1])+1], 0.0)
             for pos_idx in tqdm(range(self.labels.shape[0])):
+                # Scales 0-1 to 0-N/M
                 pos_x = int(self.labels[pos_idx, 0] * self.pos_grid[0])
                 pos_y = int(self.labels[pos_idx, 1] * self.pos_grid[1])
-                to_plot[pos_x, 400-pos_y] = 1.0 #flips y
-            # Local import to avoid messing non-local interfaces
+                # Flips Y (to correctly plot with imshow)
+                to_plot[pos_x, 400-pos_y] = 1.0
+            # Local import to avoid messing non-gaphical interfaces
             matplotlib.use('agg')
             import matplotlib.pyplot as plt
             plt.imshow(np.transpose(to_plot))
@@ -242,7 +245,7 @@ class Preprocessor():
                 "but the data is fine, as you'll see in the following steps)", image_locaton)
 
 def get_dataset_id(settings):
-    """ Creates and returns an unique ID, given the data parameters.
+    """ Creates and returns an unique ID (for practical purposes), given the data parameters.
     The main use of this ID is to make sure we are using the correct data source,
     and that the data parameters weren't changed halfway through the simulation sequence.
     """
