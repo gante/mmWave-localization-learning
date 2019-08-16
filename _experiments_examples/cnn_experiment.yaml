@@ -15,4 +15,26 @@ data_parameters:
     run_sanity_checks: True
 
 ml_parameters:
-    test: "a"
+    # IO settings
+    input_name: "input"
+    input_shape: [32, 81, 1]   #BF, usable timeslots, 1 "data channel"
+    output_name: "location"
+    output_type: "regression"
+    output_shape: [2]
+
+    # basic model hyperparams
+    batch_size: 64
+    batch_size_inference: 256
+    dropout: 0.01
+    epochs: 1000    #max number of epochs
+    fc_layers: 12
+    fc_neurons: 256
+    learning_rate: 0.0001
+    learning_rate_decay: 0.995  #multiplicative term at the end of each epoch
+    target_gpu: "0"
+
+    # architecture specific hyperparams
+    conv_layers: 1
+    conv_filters: [8]
+    conv_filter_size: [[3, 3]]
+    conv_maxpool: [[2, 1]]

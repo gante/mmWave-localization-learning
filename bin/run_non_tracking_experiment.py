@@ -6,13 +6,15 @@ The arguments are loaded from a .yaml file, which is the input argument of this 
 """
 
 import sys
-import yaml
 import logging
+import yaml
 
 from bff_positioning.data import Preprocessor
 
 def main():
     """Main block of code, which runs the experiment"""
+
+    logging.basicConfig(level="INFO")
 
     # Load the .yaml data
     assert len(sys.argv) == 2, "Exactly one experiment configuration file must be "\
@@ -27,7 +29,7 @@ def main():
     dataset_exists = data_preprocessor.check_existing_dataset()
     if not dataset_exists:
         logging.error("The dataset with the specified path (%s) and/or simulation settings "
-            "(specified in %s) does not exist. Please run the data preprocessing step with the"
+            "(defined in %s) does not exist. Please run the data preprocessing step with the"
             "the same simulation settings.", data_preprocessor.preprocessed_file, sys.argv[1])
 
 
