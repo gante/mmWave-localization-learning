@@ -1,6 +1,6 @@
 # Beamformed Fingerprint Learning
 
-[Last major update: 29-Jun-2019 (Added new paper)]
+[Last major update: 16-Aug-2019 (Added journal link)]
 
 A ML based algorithm that enables accurate positioning from mmWave transmissions - with and without tracking. For
 the corresponding [papers](#papers), check their section.
@@ -76,11 +76,11 @@ The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Ma
 
 (From newest to oldest)
 
-"Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G" --- Neural Processing Letters (to appear, will update link soon). A post-peer-review, pre-copyedit version is also available [here](https://drive.google.com/open?id=19P7Ebg80pVqyHNkfPDQNweozl4k4S6RC).
+"Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G" --- Neural Processing Letters ([pdf preview link](https://rdcu.be/bOOpk)). A post-peer-review, pre-copyedit version is also available [here](https://drive.google.com/open?id=19P7Ebg80pVqyHNkfPDQNweozl4k4S6RC).
 
-"Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 [ieeexplore_link](https://ieeexplore.ieee.org/document/8683782)
+"Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 [ieeexplore link](https://ieeexplore.ieee.org/document/8683782)
 
-"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 [ieeexplore_link](https://ieeexplore.ieee.org/document/8690987) (also here: [arxiv_link](https://arxiv.org/abs/1804.04112))
+"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 [ieeexplore link](https://ieeexplore.ieee.org/document/8690987) (also here: [arxiv link](https://arxiv.org/abs/1804.04112))
 
 ## License
 
