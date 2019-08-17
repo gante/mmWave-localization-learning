@@ -1,7 +1,7 @@
 """ Python module containing a class for basic interface of a ML model, as well as functions
 shared by multiple model types.
 """
-# pylint: disable=no-member
+#pylint: disable=attribute-defined-outside-init
 
 import os
 import logging
@@ -45,19 +45,38 @@ class ModelInterface():
     # 3) Add an MC dropout flag to the predict functions, to enable uncertainty prediction
 
     def __init__(self, model_settings):
+        self._instatiate_basic_variables()
         self.model_settings = model_settings
-        for key, value in model_settings.items():
-            setattr(self, key, value)
 
-        # Instantiates other variables
+    def _instatiate_basic_variables(self):
+        """ Instatiates a bunch of basic variables (moved out of init for readibility)
+        """
+        # Instatiates basic settings
+        self.input_name = None
+        self.input_shape = None
+        self.output_name = None
+        self.output_type = None
+        self.output_shape = None
+        self.batch_size = None
+        self.batch_size_inference = None
+        self.dropout = None
+        self.epochs = None
+        self.fc_layers = None
+        self.fc_neurons = None
+        self.learning_rate = None
+        self.learning_rate_decay = None
+        self.target_gpu = None
+
+        # Instantiates other common variables
+        self.train_step = None
         self.learning_rate_var = None
         self.keep_prob = None
         self.model_input = None
-        self.model_output = None
+        self.model_target = None
 
     def _check_settings_names(self, accepted_settings):
-        """Checks the all input settings are usable. If they are not, it is likely that
-        there was some misplanning with the model configuration, and it should be re-checked
+        """Checks the all input settings are usable and present. If they are not, it is likely that
+        there was some misplanning with the model configuration, and it should be re-checked!
 
         :param accepted_settings: list of strings with the accepted settings for each model
         """
@@ -65,6 +84,13 @@ class ModelInterface():
             "\nList of expected settings: {}\nList of obtained settings: {}"
         assert set(self.model_settings.keys()) == set(accepted_settings), error_str.format(
             accepted_settings, list(self.model_settings.keys()))
+
+    def _set_settings(self):
+        """ Sets internal variables with the values from model_settings
+        """
+        for key, value in self.model_settings.items():
+            assert hasattr(self, key), "self.{} must be initialized before being set!".format(key)
+            setattr(self, key, value)
 
     def _set_gpu(self):
         """ If the option 'target_gpu' is defined, sets that GPU
@@ -97,13 +123,13 @@ class ModelInterface():
             name=self.input_name,
         )
         if self.output_type == "regression":
-            self.model_output = tf.placeholder(
+            self.model_target = tf.placeholder(
                 tf.float32,
                 shape=[None] + self.output_shape,
                 name=self.output_name
             )
         elif self.output_type == "classification":
-            self.model_output = tf.placeholder(tf.int64, shape=[None], name =self.output_name)
+            self.model_target = tf.placeholder(tf.int64, shape=[None], name=self.output_name)
         else:
             raise ValueError("Unknown 'output_type' ({}). Only 'classification' and 'regression' "
                 "are accepted.".format(self.output_type))

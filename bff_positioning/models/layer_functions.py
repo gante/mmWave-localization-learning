@@ -30,19 +30,74 @@ def weight_variable(shape, std=None):
     return tf.Variable(initial)
 
 
-def bias_variable(shape, val=0.01):
+def bias_variable(shape, bias=0.01):
     """Function to initialize the bias. For ReLUs, it MUST be > 0.0
 
     :param shape: the shape of the bias variable
     :param val: the value of the bias variable
     """
-    initial = tf.constant(val, shape=shape)
+    initial = tf.constant(bias, shape=shape)
     return tf.Variable(initial)
 
 
 def batch_norm(x, phase):
     """Batch normalization wrapper"""
     return tf.layers.batch_normalization(x, center=True, scale=True, training=phase)
+
+
+def add_linear_layer(input_data, n_dims, bias=0.01):
+    """ Adds a linear layer to the input, returning its output. This is used as a basic
+    building block for other layers
+
+    :param input_data: TF tensor with this layer's input
+    :param n_dims: Number of output dimentions
+    :param bias: This layer's bias
+    :returns: TF tensor with this layer's output
+    """
+    assert len(input_data.shape) == 2, "You must flatten your input before this layer!"
+    input_length = input_data.shape[1]
+    w = weight_variable([input_length, n_dims])
+    b = bias_variable([n_dims], bias=bias)
+    return tf.matmul(input_data, w) + b
+
+
+def add_fc_layer(input_data, neurons, keep_prob):
+    """ Adds a fully connected layer to the input, with dropout, returning its output
+
+    :param input_data: TF tensor with this layer's input
+    :param neurons: number this layer's neurons
+    :param keep_prob: TF variable with (1 - dropout) probability
+    :returns: TF tensor with this layer's output
+    """
+    h = tf.nn.relu(add_linear_layer(input_data, neurons))
+    return tf.nn.dropout(h, keep_prob)
+
+
+def add_regression_output(input_data, n_dims, output_name):
+    """ Adds the last layer: regression output
+    TODO: add option to remove clipping, and to set a different bias
+
+    :param input_data: TF tensor with this layer's input
+    :param n_dims: Number of output dimentions
+    :param output_name: name of the regression output variable in the TF graph
+    :returns: TF tensor with this layer's output
+    """
+    h = add_linear_layer(input_data, n_dims, bias=0.5)
+    return tf.clip_by_value(h, 0.0, 1.0, name=output_name)
+
+
+def add_classification_output(input_data, n_classes):
+    """ Adds the last layer: logits output
+
+    :param input_data: TF tensor with this layer's input
+    :param n_classes: Number of output classes
+    :returns: TF tensor with this layer's output
+    """
+    assert len(input_data.shape) == 2, "You must flatten your input before a FCL"
+    input_length = input_data.shape[1]
+    w = weight_variable([input_length, n_classes])
+    b = bias_variable([n_classes])
+    return tf.matmul(input_data, w) + b
 
 
 # -------------------------------------------------------------------------------------------------
@@ -55,3 +110,23 @@ def conv2d(x, W):
 def max_pool(data_in, x, y):
     """Maxpool layer wrapper"""
     return tf.nn.max_pool(data_in, ksize=[1, x, y, 1], strides=[1, x, y, 1], padding='SAME')
+
+
+def add_conv_layer(filter_shape, n_filters, max_pool_shape, input_data):
+    """ Adds a convolution layer with pooling, and returns its output
+
+    :param filter_shape: filter dimentions
+    :param n_filters: number of filters in the layer
+    :param max_pool_shape: max pool dimentions
+    :param input_data: TF tensor with this layer's input
+    :returns: TF tensor with this layer's output
+    """
+    assert len(input_data.shape) == 4, "An input data tensor with 4 dimentions was expected"
+    assert len(filter_shape) == 2, "Only 2D convolutions are supported (so far :D)"
+    assert len(max_pool_shape) == 2, "Only 2D maxpool is supported (so far :D)"
+    prev_layer_channels = input_data.shape[-1]
+    w_conv = weight_variable([filter_shape[0], filter_shape[1], prev_layer_channels, n_filters])
+    b_conv = bias_variable([n_filters])
+    h_conv = tf.nn.relu(conv2d(input_data, w_conv) + b_conv)
+    h_pool = max_pool(h_conv, max_pool_shape[0], max_pool_shape[1])
+    return h_pool
