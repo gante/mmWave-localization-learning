@@ -43,17 +43,15 @@ class Preprocessor():
 
     def check_existing_dataset(self):
         """ Checks whether the dataset we are trying to create already exists
+
         :returns: Boolean flag, with `True` meaning that the dataset already exists
         """
         dataset_exists = False
         if os.path.isfile(self.preprocessed_file):
             with open(self.preprocessed_file, 'rb') as dataset_file:
                 _, _, target_dataset_id = pickle.load(dataset_file)
-
             if target_dataset_id == self.dataset_id:
                 dataset_exists = True
-                logging.info("The dataset already exists in %s, skipping the dataset creation "
-                    "steps!", self.preprocessed_file)
         return dataset_exists
 
     def create_bff_dataset(self):
@@ -243,6 +241,21 @@ class Preprocessor():
             plt.savefig(image_locaton)
             logging.info("Done! (Check %s - this image usually comes out with some weird lines, "
                 "but the data is fine, as you'll see in the following steps)", image_locaton)
+
+    def load_dataset(self):
+        """ Loads the previously stored dataset, returning it
+
+        :returns: previously stored features and labels
+        """
+        assert self.check_existing_dataset(), "The dataset with the specified path ({}) either does "\
+            "not exists or was built with different simulation settings. Please run the data "\
+            "preprocessing step with the the same simulation settings!".format(
+            self.preprocessed_file)
+
+        with open(self.preprocessed_file, 'rb') as dataset_file:
+            features, labels, _ = pickle.load(dataset_file)
+        return features, labels
+
 
 def get_dataset_id(settings):
     """ Creates and returns an unique ID (for practical purposes), given the data parameters.

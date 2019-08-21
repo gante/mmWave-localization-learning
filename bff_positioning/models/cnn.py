@@ -27,7 +27,7 @@ class CNN(BaseModel):
     # ---------------------------------------------------------------------------------------------
     # Model interface functions
     def set_graph(self):
-        """ Sets the TF graph
+        """ Sets the TF graph and initializes the session
         """
         # Sets: learning_rate_var, keep_prob, model_input, model_target
         self._set_graph_io()
@@ -60,6 +60,14 @@ class CNN(BaseModel):
             self.train_step = self._add_classification_output(fcn_output)
         else:   # (regression)
             self.train_step = self._add_regression_output(fcn_output)
+
+        # Final step before training:
+        self._prepare_model_for_training()
+
+    def close(self):
+        """Cleans up the session and any left over data
+        """
+        self.session.close()
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: misc

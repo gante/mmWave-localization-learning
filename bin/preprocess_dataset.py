@@ -37,6 +37,9 @@ def main():
         # settings for the preprocessing part, and it's used to make sure future uses
         # of this preprocessed data match the desired simulation settings
         data_preprocessor.store_dataset()
+    else:
+        logging.info("The dataset already exists in %s, skipping the dataset creation "
+            "steps!", experiment_config['data_parameters']['preprocessed_file'])
 
 
 if __name__ == '__main__':

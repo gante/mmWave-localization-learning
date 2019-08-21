@@ -4,6 +4,7 @@ shared by multiple model types.
 
 import os
 import logging
+import numpy as np
 import tensorflow as tf
 
 from .layer_functions import add_linear_layer
@@ -42,6 +43,8 @@ class BaseModel():
         self.learning_rate_decay = model_settings["learning_rate_decay"]
 
         # Instantiates other common variables that will be set later
+        self.saver = None
+        self.session = None
         self.train_step = None
         self.learning_rate_var = None
         self.keep_prob = None
@@ -59,7 +62,7 @@ class BaseModel():
         Given the settings, sets up the model graph for training
         """
         raise NotImplementedError(
-            "The model sub-class did not implement a 'setup()' function."
+            "The model sub-class did not implement a 'set_graph()' function."
         )
 
     def train_batch(self, batch_x, batch_y):
@@ -105,6 +108,15 @@ class BaseModel():
         """
         raise NotImplementedError(
             "The model sub-class did not implement a 'load()' function."
+        )
+
+    def close(self):
+        """Prototype: close(self)
+
+        Cleans up the session and any left over data
+        """
+        raise NotImplementedError(
+            "The model sub-class did not implement a 'close()' function."
         )
 
     # ---------------------------------------------------------------------------------------------
@@ -176,10 +188,26 @@ class BaseModel():
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: misc
-    def _set_gpu(self, model_settings):
+    @staticmethod
+    def _set_gpu(model_settings):
         """ If the option 'target_gpu' is defined in `model_settings`, sets that GPU
         """
         if "target_gpu" in model_settings:
             target_gpu = model_settings["target_gpu"]
             logging.info("[Using GPU #%s]", target_gpu)
             os.environ["CUDA_VISIBLE_DEVICES"] = str(target_gpu)
+
+    def _prepare_model_for_training(self):
+        """ Self-documenting :D
+        """
+        # Sets the saver
+        self.saver = tf.train.Saver()
+
+        # Sets the session
+        self.session = tf.Session(config=tf.ConfigProto(gpu_options={"allow_growth": True}))
+
+        # Initializes TF variables
+        self.session.run(tf.global_variables_initializer())
+        trainable_parameters = int(np.sum([np.product([var_dim.value for var_dim in var.get_shape()])
+            for var in tf.trainable_variables()]))
+        logging.info("Model initialized with %s trainable parameters!", trainable_parameters)

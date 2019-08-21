@@ -9,7 +9,7 @@ import sys
 import logging
 import yaml
 
-from bff_positioning.data import Preprocessor
+from bff_positioning.data import Preprocessor, create_noisy_features
 from bff_positioning.models import CNN
 
 def main():
@@ -17,7 +17,7 @@ def main():
 
     logging.basicConfig(level="INFO")
 
-    # Load the .yaml data
+    # Load the .yaml data and unpacks it
     assert len(sys.argv) == 2, "Exactly one experiment configuration file must be "\
         "passed as a positional argument to this script. \n\n"\
         "E.g. `python run_non_tracking_experiment.py <path to .yaml file>`"
@@ -28,29 +28,26 @@ def main():
     data_parameters = experiment_config['data_parameters']
     ml_parameters = experiment_config['ml_parameters']
 
-    # Checks if the desired pre-processed data exists
-    data_preprocessor = Preprocessor(data_parameters)
-    dataset_exists = data_preprocessor.check_existing_dataset()
-    if not dataset_exists:
-        logging.error("The dataset with the specified path (%s) and/or simulation settings "
-            "(defined in %s) does not exist. Please run the data preprocessing step with the"
-            "the same simulation settings.", data_preprocessor.preprocessed_file, sys.argv[1])
-
-    # Initializes the model and sets up its graph
+    # Initializes the model and prepares it for training
     if simulation_settings["model_type"] == "cnn":
         model = CNN(ml_parameters)
     else:
         raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "
             "'cnn' is supported. [If you were looking for the HCNNs: sorry, the code was quite "
             "lengthy, so I moved its refactoring into a future to do. Please contact me if you "
-            "want to experiment with it.]")
+            "want to experiment with it.]".format(simulation_settings["model_type"]))
     model.set_graph()
 
-    # Loads the data
+    # Loads the dataset
+    data_preprocessor = Preprocessor(data_parameters)
+    features, labels = data_preprocessor.load_dataset()
 
+    # Creates the test set
+    # features_test, labels_test = create_noisy_features(features, labels,
+                        # noise_std_converted, min_pow_cutoff, scaler, only_16_bf)
 
-
-
+    # Clean up
+    model.close()
 
 if __name__ == '__main__':
     main()
