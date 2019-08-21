@@ -1,41 +1,21 @@
-""" Python module containing a class for basic interface of a ML model, as well as functions
+""" Python module containing a class for basic interface of an ML model, as well as functions
 shared by multiple model types.
 """
-#pylint: disable=attribute-defined-outside-init
 
 import os
 import logging
-
 import tensorflow as tf
 
-# Settings common to all model types
-BASE_SETTINGS = [
-    # IO settings
-    "input_name",
-    "input_shape",
-    "output_name",
-    "output_type",
-    "output_shape",
-
-    # General hyperparams
-    "batch_size",
-    "batch_size_inference",
-    "dropout",
-    "epochs",
-    "fc_layers",
-    "fc_neurons",
-    "learning_rate",
-    "learning_rate_decay",
-    "target_gpu",
-]
+from .layer_functions import add_linear_layer
 
 
-class ModelInterface():
-    """ This class defines a common model interface. The models defined within this module
-    should implement all depicted functions, to abstract the details away from the main scripts
+class BaseModel():
+    """ This class defines a common model interface. The models defined within this project
+    should implement all depicted interface functions, to abstract the details away from the main
+    scripts
 
     :param model_settings: a dictionary containing the model settings. All dictionary key/value
-        pairs will be set as class members, for further readibility
+        pairs will be set as class members, for further readibility (and IDE auto-complete :D)
     """
 
     # To add in the future:
@@ -45,60 +25,34 @@ class ModelInterface():
     # 3) Add an MC dropout flag to the predict functions, to enable uncertainty prediction
 
     def __init__(self, model_settings):
-        self._instatiate_basic_variables()
-        self.model_settings = model_settings
 
-    def _instatiate_basic_variables(self):
-        """ Instatiates a bunch of basic variables (moved out of init for readibility)
-        """
-        # Instatiates basic settings
-        self.input_name = None
-        self.input_shape = None
-        self.output_name = None
-        self.output_type = None
-        self.output_shape = None
-        self.batch_size = None
-        self.batch_size_inference = None
-        self.dropout = None
-        self.epochs = None
-        self.fc_layers = None
-        self.fc_neurons = None
-        self.learning_rate = None
-        self.learning_rate_decay = None
-        self.target_gpu = None
+        # Instatiates basic model settings
+        self.input_name = model_settings["input_name"]
+        self.input_shape = model_settings["input_shape"]
+        self.output_name = model_settings["output_name"]
+        self.output_type = model_settings["output_type"]
+        self.output_shape = model_settings["output_shape"]
+        self.batch_size = model_settings["batch_size"]
+        self.batch_size_inference = model_settings["batch_size_inference"]
+        self.dropout = model_settings["dropout"]
+        self.epochs = model_settings["epochs"]
+        self.fc_layers = model_settings["fc_layers"]
+        self.fc_neurons = model_settings["fc_neurons"]
+        self.learning_rate = model_settings["learning_rate"]
+        self.learning_rate_decay = model_settings["learning_rate_decay"]
 
-        # Instantiates other common variables
+        # Instantiates other common variables that will be set later
         self.train_step = None
         self.learning_rate_var = None
         self.keep_prob = None
         self.model_input = None
         self.model_target = None
 
-    def _check_settings_names(self, accepted_settings):
-        """Checks the all input settings are usable and present. If they are not, it is likely that
-        there was some misplanning with the model configuration, and it should be re-checked!
+        # Runs basic initializations
+        self._set_gpu(model_settings)
 
-        :param accepted_settings: list of strings with the accepted settings for each model
-        """
-        error_str = "Unexpected settings were found. Please double check the settings file!"\
-            "\nList of expected settings: {}\nList of obtained settings: {}"
-        assert set(self.model_settings.keys()) == set(accepted_settings), error_str.format(
-            accepted_settings, list(self.model_settings.keys()))
-
-    def _set_settings(self):
-        """ Sets internal variables with the values from model_settings
-        """
-        for key, value in self.model_settings.items():
-            assert hasattr(self, key), "self.{} must be initialized before being set!".format(key)
-            setattr(self, key, value)
-
-    def _set_gpu(self):
-        """ If the option 'target_gpu' is defined, sets that GPU
-        """
-        if hasattr(self, "target_gpu"):
-            logging.info("[Using GPU #%s]", self.target_gpu)
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(self.target_gpu)
-
+    # ---------------------------------------------------------------------------------------------
+    # Model interface functions
     def set_graph(self):
         """Prototype: setup(self)
 
@@ -107,32 +61,6 @@ class ModelInterface():
         raise NotImplementedError(
             "The model sub-class did not implement a 'setup()' function."
         )
-
-    def _set_graph_io(self):
-        """ Auxiliary function to "set_graph()". Sets the graph input and trainable target,
-        as well as some other basic variables common to all model types
-        """
-        # The current learning rate
-        self.learning_rate_var = tf.placeholder(tf.float32, shape=[])
-        # (1 - Dropout) probability
-        self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
-
-        self.model_input = tf.placeholder(
-            tf.float32,
-            shape=[None] + self.input_shape,
-            name=self.input_name,
-        )
-        if self.output_type == "regression":
-            self.model_target = tf.placeholder(
-                tf.float32,
-                shape=[None] + self.output_shape,
-                name=self.output_name
-            )
-        elif self.output_type == "classification":
-            self.model_target = tf.placeholder(tf.int64, shape=[None], name=self.output_name)
-        else:
-            raise ValueError("Unknown 'output_type' ({}). Only 'classification' and 'regression' "
-                "are accepted.".format(self.output_type))
 
     def train_batch(self, batch_x, batch_y):
         """Prototype: train_batch(self, batch_x, batch_y)
@@ -178,3 +106,80 @@ class ModelInterface():
         raise NotImplementedError(
             "The model sub-class did not implement a 'load()' function."
         )
+
+    # ---------------------------------------------------------------------------------------------
+    # Non-interface functions: model input/output
+    def _set_graph_io(self):
+        """ Auxiliary function to "set_graph()". Sets the graph input and trainable target,
+        as well as some other basic variables common to all model types
+        """
+        # The current learning rate
+        self.learning_rate_var = tf.placeholder(tf.float32, shape=[])
+        # (1 - Dropout) probability
+        self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
+
+        self.model_input = tf.placeholder(
+            tf.float32,
+            shape=[None] + self.input_shape,
+            name=self.input_name,
+        )
+        if self.output_type == "regression":
+            self.model_target = tf.placeholder(
+                tf.float32,
+                shape=[None] + self.output_shape,
+                name=self.output_name
+            )
+        elif self.output_type == "classification":
+            self.model_target = tf.placeholder(tf.int64, shape=[None], name=self.output_name)
+        else:
+            raise ValueError("Unknown 'output_type' ({}). Only 'classification' and 'regression' "
+                "are accepted.".format(self.output_type))
+
+    def _add_classification_output(self, input_data):
+        """ Adds the last layer for classification models. Returns the trainable step.
+
+        :param input_data: TF tensor with this layer's input
+        :returns: the trainable step
+        """
+        # Defines the logits and the softmax output
+        logits = add_linear_layer(input_data, self.output_shape)
+        tf.nn.softmax(logits, name=self.output_name)
+
+        # Defines the loss function [mean(cross_entropy(target_value - softmax))]
+        cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+            labels=self.model_target,
+            logits=logits
+        ))
+
+        # Defines the optimizer (ADAM) and the train step
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate_var)
+        train_step = optimizer.minimize(cross_entropy)
+        return train_step
+
+    def _add_regression_output(self, input_data):
+        """ Adds the last layer for regression models. Returns the trainable step.
+
+        :param input_data: TF tensor with this layer's input
+        :returns: the trainable step
+        """
+        # Defines the regression output (used to learn), and its clipped version (used to predict)
+        regression = add_linear_layer(input_data, self.output_shape, bias=0.5)
+        tf.clip_by_value(regression, 0.0, 1.0, name=self.output_name)
+
+        # Defines the loss function [MSE = mean(square(target_value - regression))]
+        mse = tf.reduce_mean(tf.square(self.model_target - regression))
+
+        # Defines the optimizer (ADAM) and the train step
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate_var)
+        train_step = optimizer.minimize(mse)
+        return train_step
+
+    # ---------------------------------------------------------------------------------------------
+    # Non-interface functions: misc
+    def _set_gpu(self, model_settings):
+        """ If the option 'target_gpu' is defined in `model_settings`, sets that GPU
+        """
+        if "target_gpu" in model_settings:
+            target_gpu = model_settings["target_gpu"]
+            logging.info("[Using GPU #%s]", target_gpu)
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(target_gpu)

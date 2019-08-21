@@ -1,59 +1,31 @@
 """ Python class depicting a Convolutional Neural Network (CNN).
 """
-#pylint: disable=unsubscriptable-object
-#pylint: disable=attribute-defined-outside-init
 
 import tensorflow as tf
 
-from .base_model import ModelInterface, BASE_SETTINGS
-from .layer_functions import add_conv_layer, add_fc_layer, add_linear_layer
-
-ACCEPTED_SETTINGS = BASE_SETTINGS + [
-    "conv_layers",
-    "conv_filters",
-    "conv_filter_size",
-    "conv_maxpool",
-]
+from .base_model import BaseModel
+from .layer_functions import add_conv_layer, add_fc_layer
 
 
-class CNN(ModelInterface):
+class CNN(BaseModel):
     """Convolutional Neural Network class
 
     :param model_settings: a dictionary containing the model settings
     """
 
     def __init__(self, model_settings):
+        # Initializes the BaseModel
         super().__init__(model_settings=model_settings)
-        self._check_settings_names(ACCEPTED_SETTINGS)
-        self._instatiate_cnn_variables()
-        self._set_settings()
+
+        # Instanciates CNN-specific variables
+        self.conv_layers = model_settings["conv_layers"]
+        self.conv_filters = model_settings["conv_filters"]
+        self.conv_filter_size = model_settings["conv_filter_size"]
+        self.conv_maxpool = model_settings["conv_maxpool"]
         self._check_conv_settings()
-        self._set_gpu()
 
-    def _instatiate_cnn_variables(self):
-        """ Instatiates a bunch of model-specific variables (moved out of init for readibility)
-        """
-        self.conv_layers = None
-        self.conv_filters = None
-        self.conv_filter_size = None
-        self.conv_maxpool = None
-
-    def _check_conv_settings(self):
-        """ Checks if the CNN's settings have the expected shape
-        """
-        # Checks conv layers
-        for hyperparam in ("conv_filters", "conv_filter_size", "conv_maxpool"):
-            assert self.conv_layers == len(getattr(self, hyperparam)), "The hyperparameter "\
-                "{} does not has the expected dimension ({})".format(hyperparam, self.conv_layers)
-        for hyperparam in ("conv_filter_size", "conv_maxpool"):
-            for layer in range(self.conv_layers):
-                assert len(getattr(self, hyperparam)[layer]) == 2, "Currently, only 2D "\
-                    "convolutions are supported. (Check the {}-th layer on {})".format(layer,
-                    hyperparam)
-        # Checks other settings
-        assert len(self.input_shape) == 3, "For a CNN network, the input shape should have 3 "\
-            "dimentions (got {})".format(len(self.input_shape))
-
+    # ---------------------------------------------------------------------------------------------
+    # Model interface functions
     def set_graph(self):
         """ Sets the TF graph
         """
@@ -83,22 +55,26 @@ class CNN(ModelInterface):
                 self.keep_prob
             )
 
-        #-------------------------------------------------------------------- rehash as common functions!
-        # Adds the output layer and the corresponding loss function
+        # Adds the output layer, storing the train step
         if self.output_type == "classification":
-
-            # Defines the logits and the softmax output
-            logits = add_linear_layer(fcn_output, self.output_shape)
-            tf.nn.softmax(logits, name=self.output_name)
-
-            # Defines the loss function [mean(cross_entropy(target_value - obtained_softmax))]
-            cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
-                labels=self.model_target,
-                logits=logits
-            ))
-
-            # Defines the optimizer (ADAM) and the train step
-            optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate_var)
-            self.train_step = optimizer.minimize(cross_entropy)
-
+            self.train_step = self._add_classification_output(fcn_output)
         else:   # (regression)
+            self.train_step = self._add_regression_output(fcn_output)
+
+    # ---------------------------------------------------------------------------------------------
+    # Non-interface functions: misc
+    def _check_conv_settings(self):
+        """ Checks if the CNN's settings have the expected shape
+        """
+        # Checks conv layers
+        for hyperparam in ("conv_filters", "conv_filter_size", "conv_maxpool"):
+            assert self.conv_layers == len(getattr(self, hyperparam)), "The hyperparameter "\
+                "{} does not has the expected dimension ({})".format(hyperparam, self.conv_layers)
+        for hyperparam in ("conv_filter_size", "conv_maxpool"):
+            for layer in range(self.conv_layers):
+                assert len(getattr(self, hyperparam)[layer]) == 2, "Currently, only 2D "\
+                    "convolutions are supported. (Check the {}-th layer on {})".format(layer,
+                    hyperparam)
+        # Checks other settings
+        assert len(self.input_shape) == 3, "For a CNN network, the input shape should have 3 "\
+            "dimentions (got {})".format(len(self.input_shape))

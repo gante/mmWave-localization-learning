@@ -1,4 +1,4 @@
-""" Python module with layer-related functions, to be reused in DL multiple architectures
+""" Python module with basic layer-related functions, to be reused in DL multiple architectures
 """
 
 import numpy as np
@@ -71,33 +71,6 @@ def add_fc_layer(input_data, neurons, keep_prob):
     """
     h = tf.nn.relu(add_linear_layer(input_data, neurons))
     return tf.nn.dropout(h, keep_prob)
-
-
-def add_regression_output(input_data, n_dims, output_name):
-    """ Adds the last layer: regression output
-    TODO: add option to remove clipping, and to set a different bias
-
-    :param input_data: TF tensor with this layer's input
-    :param n_dims: Number of output dimentions
-    :param output_name: name of the regression output variable in the TF graph
-    :returns: TF tensor with this layer's output
-    """
-    h = add_linear_layer(input_data, n_dims, bias=0.5)
-    return tf.clip_by_value(h, 0.0, 1.0, name=output_name)
-
-
-def add_classification_output(input_data, n_classes):
-    """ Adds the last layer: logits output
-
-    :param input_data: TF tensor with this layer's input
-    :param n_classes: Number of output classes
-    :returns: TF tensor with this layer's output
-    """
-    assert len(input_data.shape) == 2, "You must flatten your input before a FCL"
-    input_length = input_data.shape[1]
-    w = weight_variable([input_length, n_classes])
-    b = bias_variable([n_classes])
-    return tf.matmul(input_data, w) + b
 
 
 # -------------------------------------------------------------------------------------------------

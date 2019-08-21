@@ -1,4 +1,4 @@
-""" Python module that contains functions to manipulate data
+""" Python module that contains functions to manipulate the datasets used to train the models
 """
 
 import math

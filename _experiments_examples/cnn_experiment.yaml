@@ -1,5 +1,9 @@
 description: Parameters used to train a CNN for the BFF problem
 
+# Settings for data preprocessing
+# IMPORTANT - avoid changing these data_parameters (other than the file paths), unless you really
+# understand the consequences in the code. Most parameters came from the ray-tracing simulations
+# themselves
 data_parameters:
     #input_file: '../data_preprocessing/data_processed/final_table'
     input_file: '../local_run/data/final_table'
@@ -14,13 +18,18 @@ data_parameters:
     keep_timeslots: [1, 82]
     run_sanity_checks: True
 
+# Settings for overall experiment control
+experiment_settings:
+    model_type: "cnn"
+
+# Settings for model hyperparameters
 ml_parameters:
     # IO settings
     input_name: "input"
     input_shape: [32, 81, 1]   #BF, usable timeslots, 1 "data channel"
     output_name: "location"
     output_type: "regression"
-    output_shape: [2]
+    output_shape: 2
 
     # basic model hyperparams
     batch_size: 64
