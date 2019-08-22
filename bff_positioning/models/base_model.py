@@ -4,26 +4,33 @@ shared by multiple model types.
 
 import os
 import logging
+import math
 import numpy as np
 import tensorflow as tf
+from tqdm import tqdm
+from sklearn.utils import shuffle
+import sklearn.metrics as metrics
 
 from .layer_functions import add_linear_layer
+
+SCORE_TYPES = ['accuracy', 'f1_score', 'mean_square_error', 'euclidean_distance']
 
 
 class BaseModel():
     """ This class defines a common model interface. The models defined within this project
-    should implement all depicted interface functions, to abstract the details away from the main
-    scripts
+    should explicitly implement all depicted interface functions, to abstract the details
+    away from the main scripts.
 
     :param model_settings: a dictionary containing the model settings. All dictionary key/value
         pairs will be set as class members, for further readibility (and IDE auto-complete :D)
     """
 
     # To add in the future:
-    # 1) Instead of "train_batch()" with an outer control loop, create a "train_generator()" that
+    # - Add TensorBoard functionality
+    # - Instead of "train_batch()" with an outer control loop, create a "train_generator()" that
     #   uses generators
-    # 2) Similarly, crate a "predict_generator()"
-    # 3) Add an MC dropout flag to the predict functions, to enable uncertainty prediction
+    # - Similarly, crate a "predict_generator()"
+    # - Add an MC dropout flag to the predict functions, to enable uncertainty prediction
 
     def __init__(self, model_settings):
 
@@ -33,22 +40,29 @@ class BaseModel():
         self.output_name = model_settings["output_name"]
         self.output_type = model_settings["output_type"]
         self.output_shape = model_settings["output_shape"]
+        self.eval_metric = model_settings["eval_metric"]
         self.batch_size = model_settings["batch_size"]
         self.batch_size_inference = model_settings["batch_size_inference"]
         self.dropout = model_settings["dropout"]
-        self.epochs = model_settings["epochs"]
+        self.early_stopping = model_settings["early_stopping"]
+        self.max_epochs = model_settings["max_epochs"]
         self.fc_layers = model_settings["fc_layers"]
         self.fc_neurons = model_settings["fc_neurons"]
         self.learning_rate = model_settings["learning_rate"]
         self.learning_rate_decay = model_settings["learning_rate_decay"]
 
-        # Instantiates other common variables that will be set later
+        # Instantiates other common variables that might be used later
+        self.current_learning_rate = None
+        self.current_epoch = None
+        self.epochs_not_improving = None
+        self.best_validation_score = None
         self.saver = None
         self.session = None
         self.train_step = None
         self.learning_rate_var = None
-        self.keep_prob = None
+        self.keep_prob_var = None
         self.model_input = None
+        self.model_output = None
         self.model_target = None
 
         # Runs basic initializations
@@ -56,8 +70,8 @@ class BaseModel():
 
     # ---------------------------------------------------------------------------------------------
     # Model interface functions
-    def set_graph(self):
-        """Prototype: setup(self)
+    def set_graph(self, input_shape, output_shape):
+        """Prototype: setup(self, input_shape, output_shape)
 
         Given the settings, sets up the model graph for training
         """
@@ -65,31 +79,32 @@ class BaseModel():
             "The model sub-class did not implement a 'set_graph()' function."
         )
 
-    def train_batch(self, batch_x, batch_y):
-        """Prototype: train_batch(self, batch_x, batch_y)
+    def train_epoch(self, X, Y):
+        """Prototype: train_batch(self, X, Y)
 
-        Trains on a single batch. Requires an outer control loop, feeding the data.
+        Trains on a single epoch, given the data (as numpy variables).
         """
         raise NotImplementedError(
-            "The model sub-class did not implement a 'train_batch()' function."
+            "The model sub-class did not implement a 'train_epoch()' function."
         )
 
-    def epoch_end(self):
-        """Prototype: epoch_end(self)
+    def epoch_end(self, X=None, Y=None):
+        """Prototype: epoch_end(self, X, Y)
 
-        Executes end of epoch logic (e.g. decay learning rate, try early stopping, ...)
+        Executes end of epoch logic (e.g. decay learning rate, try early stopping, ...) and
+        returns whether the model should keep training or not
         """
         raise NotImplementedError(
             "The model sub-class did not implement a 'epoch_end()' function."
         )
 
-    def predict_batch(self, batch_x):
-        """Prototype: predict_batch(self, batch_x, batch_y)
+    def predict(self, X):
+        """Prototype: predict(self, X)
 
-        Predicts on a single batch. Requires an outer control loop, feeding the data.
+        Predicts on the given data, and scores the prediction
         """
         raise NotImplementedError(
-            "The model sub-class did not implement a 'predict_batch()' function."
+            "The model sub-class did not implement a 'predict()' function."
         )
 
     def save(self, folder):
@@ -120,25 +135,127 @@ class BaseModel():
         )
 
     # ---------------------------------------------------------------------------------------------
+    # Non-interface functions: model training
+    def _train_epoch(self, X, Y):
+        """Default training routine - trains the model for an epoch
+
+        :param X: numpy array with the features
+        :param Y: numpy array with the labels
+        """
+        assert X.shape[0] == Y.shape[0], "X and Y have a different number of samples!"
+        max_batches = int(math.ceil(X.shape[0] / self.batch_size))
+        X, Y = shuffle(X, Y)
+        train_string = "Training on epoch: {:4}; LR: {:4.4f}"
+
+        for batch_idx in tqdm(
+            range(max_batches),
+            desc=train_string.format(self.current_epoch, self.current_learning_rate)
+        ):
+            start_batch = batch_idx * self.batch_size
+            end_batch = min((batch_idx + 1) * self.batch_size, X.shape[0])
+            self.train_step.run(feed_dict={
+                self.model_input: X[start_batch:end_batch],
+                self.model_target: Y[start_batch:end_batch],
+                self.keep_prob_var: 1.0 - self.dropout,
+                self.learning_rate_var: self.current_learning_rate,
+            })
+        self.current_epoch += 1
+
+    def _epoch_end(self, X=None, Y=None):
+        """ Default end of epoch routine - Performs end of epoch operations, such as decaying the
+        learning rate. Some operations, such as the early stopping, require a validation set.
+
+        :param X: numpy array with the validation features, defaults to None
+        :param Y: numpy array with the validation labels, defaults to None
+        """
+        keep_training = True
+        val_score = None
+        if self.current_epoch >= self.max_epochs:
+            keep_training = False
+        else:
+            self.current_learning_rate *= self.learning_rate_decay
+            if X and Y:
+                val_predictions = self._predict_on_dataset(X)
+                val_score = self._score_predictions(Y, val_predictions, self.eval_metric)
+                if self.early_stopping:
+                    keep_training = self._eval_early_stopping(val_score)
+        return keep_training, val_score
+
+    def _predict_on_dataset(self, X):
+        """ Returns the predictions for a complete dataset X
+
+        :param X: numpy array with the features
+        :return: an numpy array with the predictions
+        """
+        max_batches = int(math.ceil(X.shape[0] / self.batch_size_inference))
+        predictions = []
+        for batch_idx in range(max_batches):
+            start_batch = batch_idx * self.batch_size
+            end_batch = min((batch_idx + 1) * self.batch_size, X.shape[0])
+            batch_predictions = self.model_output.run(feed_dict={
+                self.model_input: X[start_batch:end_batch],
+                self.keep_prob_var: 1.0,
+            })
+            batch_size = end_batch - start_batch
+            predictions.extend([batch_predictions[idx, ...] for idx in range(batch_size)])
+        return np.asarray(predictions)
+
+    @staticmethod
+    def _score_predictions(y_true, y_pred, score_type):
+        """ Scores the model predictions agains the ground truth, given the score type
+
+        :param y_true: ground truth
+        :param y_pred: model predictions
+        :param score_time: the type of score
+        :retuns: the predictions' score
+        """
+        score = None
+        if score_type not in SCORE_TYPES:
+            raise ValueError("{} is not a valid score type. Implemented score types: {}".format(
+                score_type, SCORE_TYPES))
+        if score_type == 'accuracy':
+            score = metrics.accuracy_score(y_true, y_pred)
+        elif score_type == 'f1_score':
+            score = metrics.f1_score(y_true, y_pred)
+        elif score_type == 'mean_square_error':
+            score = metrics.mean_squared_error(y_true, y_pred)
+        elif score == 'euclidean_distance':
+            score = np.mean(np.sqrt(np.sum(np.square(y_true - y_pred)), 1))
+        return score
+
+    def _eval_early_stopping(self, validation_score):
+        """ Evaluates the early stopping mechanism
+
+        :param validation_score: obvious, right?
+        :return: boolean depicting whether the model should keep training
+        """
+        keep_training = True
+        # if validation_score > self.c              <--------------- stopped here
+        return keep_training
+
+    # ---------------------------------------------------------------------------------------------
     # Non-interface functions: model input/output
-    def _set_graph_io(self):
+    def _set_graph_io(self, input_shape, output_shape):
         """ Auxiliary function to "set_graph()". Sets the graph input and trainable target,
         as well as some other basic variables common to all model types
+
+        :param input_shape: list with the input shape
+        :param output_shape: list with the output shape
         """
         # The current learning rate
         self.learning_rate_var = tf.placeholder(tf.float32, shape=[])
         # (1 - Dropout) probability
-        self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
+        self.keep_prob_var = tf.placeholder(tf.float32, name='keep_prob')
 
         self.model_input = tf.placeholder(
             tf.float32,
-            shape=[None] + self.input_shape,
+            shape=[None] + input_shape,
             name=self.input_name,
         )
         if self.output_type == "regression":
             self.model_target = tf.placeholder(
                 tf.float32,
-                shape=[None] + self.output_shape,
+                shape=[None] + output_shape,
                 name=self.output_name
             )
         elif self.output_type == "classification":
@@ -155,7 +272,7 @@ class BaseModel():
         """
         # Defines the logits and the softmax output
         logits = add_linear_layer(input_data, self.output_shape)
-        tf.nn.softmax(logits, name=self.output_name)
+        self.model_output = tf.nn.softmax(logits, name=self.output_name)
 
         # Defines the loss function [mean(cross_entropy(target_value - softmax))]
         cross_entropy = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -176,7 +293,7 @@ class BaseModel():
         """
         # Defines the regression output (used to learn), and its clipped version (used to predict)
         regression = add_linear_layer(input_data, self.output_shape, bias=0.5)
-        tf.clip_by_value(regression, 0.0, 1.0, name=self.output_name)
+        self.model_output = tf.clip_by_value(regression, 0.0, 1.0, name=self.output_name)
 
         # Defines the loss function [MSE = mean(square(target_value - regression))]
         mse = tf.reduce_mean(tf.square(self.model_target - regression))
@@ -211,3 +328,7 @@ class BaseModel():
         trainable_parameters = int(np.sum([np.product([var_dim.value for var_dim in var.get_shape()])
             for var in tf.trainable_variables()]))
         logging.info("Model initialized with %s trainable parameters!", trainable_parameters)
+
+        # Initializes other train-related variables
+        self.current_learning_rate = self.learning_rate
+        self.current_epoch = 0

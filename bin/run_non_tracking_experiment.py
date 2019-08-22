@@ -9,7 +9,8 @@ import sys
 import logging
 import yaml
 
-from bff_positioning.data import Preprocessor, create_noisy_features
+from bff_positioning.data import Preprocessor, create_noisy_features, undersample_bf,\
+    undersample_space
 from bff_positioning.models import CNN
 
 def main():
@@ -24,27 +25,53 @@ def main():
     with open(sys.argv[1], "r") as yaml_config_file:
         logging.info("Loading simulation settings from %s", sys.argv[1])
         experiment_config = yaml.load(yaml_config_file)
-    simulation_settings = experiment_config['simulation_settings']
+    experiment_settings = experiment_config['experiment_settings']
     data_parameters = experiment_config['data_parameters']
     ml_parameters = experiment_config['ml_parameters']
-
-    # Initializes the model and prepares it for training
-    if simulation_settings["model_type"] == "cnn":
-        model = CNN(ml_parameters)
-    else:
-        raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "
-            "'cnn' is supported. [If you were looking for the HCNNs: sorry, the code was quite "
-            "lengthy, so I moved its refactoring into a future to do. Please contact me if you "
-            "want to experiment with it.]".format(simulation_settings["model_type"]))
-    model.set_graph()
 
     # Loads the dataset
     data_preprocessor = Preprocessor(data_parameters)
     features, labels = data_preprocessor.load_dataset()
 
-    # Creates the test set
-    # features_test, labels_test = create_noisy_features(features, labels,
-                        # noise_std_converted, min_pow_cutoff, scaler, only_16_bf)
+    # Undersamples the dataset (if requested)
+    if "undersample_bf" in experiment_settings and experiment_settings["undersample_bf"]:
+        features = undersample_bf(features, data_parameters["beamformings"])
+    if "undersample_space" in experiment_settings:
+        features, labels = undersample_space(features, labels, data_parameters["undersample_space"])
+
+    # Initializes the model and prepares it for training
+    if experiment_settings["model_type"] == "cnn":
+        model = CNN(ml_parameters)
+    else:
+        raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "
+            "'cnn' is supported. [If you were looking for the HCNNs: sorry, the code was quite "
+            "lengthy, so I moved its refactoring into a future to do. Please contact me if you "
+            "want to experiment with it.]".format(experiment_settings["model_type"]))
+    model.set_graph(features.shape(), labels.shape())
+
+    # Creates the validation set
+    features_val, labels_val = create_noisy_features(
+        features,
+        labels,
+        data_parameters,
+        experiment_settings
+    )
+
+    # Runs the training loop
+    keep_training = True
+    while keep_training:
+        features_train, labels_train = create_noisy_features(
+            features,
+            labels,
+            data_parameters,
+            experiment_settings
+        )
+        model.train_epoch(features_train, labels_train)
+        keep_training, val_score = model.epoch_end(features_val, labels_val)
+        logging.info("Current average validation distance: %s", val_score)
+
+    # Store the trained model
+    model.save()
 
     # Clean up
     model.close()

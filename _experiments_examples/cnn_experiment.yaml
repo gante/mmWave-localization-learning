@@ -1,6 +1,7 @@
 description: Parameters used to train a CNN for the BFF problem
 
-# Settings for data preprocessing
+# -------------------------------------------------------------------------------------------------
+# *** Settings for data preprocessing ***
 # IMPORTANT - avoid changing these data_parameters (other than the file paths), unless you really
 # understand the consequences in the code. Most parameters came from the ray-tracing simulations
 # themselves
@@ -8,21 +9,32 @@ data_parameters:
     #input_file: '../data_preprocessing/data_processed/final_table'
     input_file: '../local_run/data/final_table'
     preprocessed_file: '../local_run/data/preprocessed_dataset'
-    max_time: 6
-    sample_freq: 20
+    max_time: 6                 #in microseconds
+    sample_freq: 20             #in MHz
     beamformings: 32
+    original_tx_power: 30       #in dBm
+    original_rx_gain: 0         #in dBi
     power_offset: 170
     power_scale: 0.01
-    pos_grid: [400.0, 400.0]
-    pos_shift: [183.0, 176.0]
+    pos_grid: [400.0, 400.0]    #in meters
+    pos_shift: [183.0, 176.0]   #in meters
     keep_timeslots: [1, 82]
     run_sanity_checks: True
 
-# Settings for overall experiment control
+
+# -------------------------------------------------------------------------------------------------
+# *** Settings for overall experiment control ***
 experiment_settings:
+    detection_threshold: -100   #in dBm  [depends on the sample fequency, thermal noise]
+    tx_power: 45                #in dBm
+    rx_gain: 10                 #in dBi
+    noise_std: 6                #in dB  [Gaussian noise applied over dB values -> "log-normal"]
+    scaler_type: "binarizer"
     model_type: "cnn"
 
-# Settings for model hyperparameters
+
+# -------------------------------------------------------------------------------------------------
+# *** Settings for model hyperparameters ***
 ml_parameters:
     # IO settings
     input_name: "input"
@@ -30,16 +42,18 @@ ml_parameters:
     output_name: "location"
     output_type: "regression"
     output_shape: 2
+    eval_metric: "euclidian_distance"
 
     # basic model hyperparams
     batch_size: 64
     batch_size_inference: 256
     dropout: 0.01
-    epochs: 1000    #max number of epochs
+    max_epochs: 1000
+    early_stopping: 50          # Stops training after these epochs without improvement on val set
     fc_layers: 12
     fc_neurons: 256
     learning_rate: 0.0001
-    learning_rate_decay: 0.995  #multiplicative term at the end of each epoch
+    learning_rate_decay: 0.995  # Multiplicative term at the end of each epoch
     target_gpu: "0"
 
     # architecture specific hyperparams

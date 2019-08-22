@@ -6,7 +6,7 @@ import tensorflow as tf
 
 
 # -------------------------------------------------------------------------------------------------
-# Generalist functions
+# Generalist model functions
 def weight_variable(shape, std=None):
     """ Function to initialize TF weights as random variables
 

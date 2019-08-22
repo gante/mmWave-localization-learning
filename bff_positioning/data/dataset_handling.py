@@ -8,28 +8,11 @@ import numpy as np
 from sklearn.preprocessing import Binarizer, Normalizer
 
 
-def get_scaler(binary_scaler=True):
-    """Returns a scaler to apply to the features.
-
-    :param binary_scaler: toggle to select between Binarizer and Normalizer scaler,
-        defaults to True (Binarizer)
-    :return: the initialized scaler, and its name
-    """
-    if binary_scaler:
-        scaler = Binarizer(0.1, copy=False)
-        scaler_name = 'binarized'
-    else:
-        scaler = Normalizer(copy=False)
-        scaler_name = 'normalized'
-    return scaler, scaler_name
-
-
 def create_noisy_features(
     features,
     labels,
-    noise_std_converted,
-    min_pow_cutoff,
-    scaler=None,
+    experiment_settings,
+    data_parameters,
 ):
     """
     Creates ONE noisy sample (i.e. pair of noisy features [received power] with non-noisy labels
@@ -39,25 +22,34 @@ def create_noisy_features(
 
     :param features: numpy 2D matrix, [sample_index, feature_index]
     :param labels: numpy 2D matrix, [sample_index, dimention]
-    :param noise_std_converted: log-normal noise to add, with the same down-scale as the features
-    :param min_pow_cutoff: minimum accepted power for the features, that will be applied after the
-        noise.
-    :param scaler: scales the features according to the scaler (check `get_scaler`)
+    :param experiment_settings: experiment-related settings
+    :param data_parameters: raw data-related settings
     :return: one full set of noisy features, with the corresponding non-noisy labels
     """
+    # Computes some auxiliary variables
+    scaler = _get_scaler(experiment_settings["scaler_type"])
+    scaled_noise, scaled_cutoff = _convert_power_variables(
+        experiment_settings,
+        data_parameters
+    )
+
+    # Shortcut: no noise to be added? return original data
+    if scaled_noise == 0.0:
+        return features, labels
+
     # Adds noise
-    noise = np.random.normal(scale=noise_std_converted, size=features.shape)
+    noise = np.random.normal(scale=scaled_noise, size=features.shape)
     noisy_features = features + noise
 
     # Cuts features below the minimum power detection threshold
-    noisy_features[noisy_features < min_pow_cutoff] = 0
+    noisy_features[noisy_features < scaled_cutoff] = 0
 
     # Removes the samples containing only 0s as features
     mask = np.ones(labels.shape[0], dtype=bool)
-    for i in range(labels.shape[0]):
-        this_samples_sum = np.sum(noisy_features[i, :])
+    for idx in range(labels.shape[0]):
+        this_samples_sum = np.sum(noisy_features[idx, :])
         if this_samples_sum < 0.01:
-            mask[i] = False
+            mask[idx] = False
     noisy_features = noisy_features[mask, :]
     noisy_labels = labels[mask, :]
 
@@ -73,19 +65,64 @@ def create_noisy_features(
     return noisy_features, noisy_labels
 
 
-def undersample_bf(features, time_slots, beamformings):
+def _convert_power_variables(experiment_settings, data_parameters):
+    """ `create_noisy_features` auxiliary function. Scales some power-related settings by
+    as much as the features were scaled.
+
+    :param experiment_settings: [description]
+    :param data_parameters: [description]
+    :return: noise and power cut off variables, as used in `create_noisy_features`
+    """
+    # Unpacks variables
+    power_offset = data_parameters["power_offset"]
+    power_scale = data_parameters["power_scale"]
+    original_tx_power = data_parameters["original_tx_power"]
+    original_rx_gain = data_parameters["original_rx_gain"]
+    baseline_cut = experiment_settings["detection_threshold"]
+    tx_power = experiment_settings["tx_power"]
+    rx_gain = experiment_settings["rx_gain"]
+
+    # Computes and scales the detection theshold
+    adjusted_cutoff = baseline_cut - (tx_power - original_tx_power) - (rx_gain - original_rx_gain)
+    scaled_cutoff = (adjusted_cutoff + power_offset) * power_scale
+
+    # Scales the noise
+    scaled_noise = experiment_settings["noise_std"] * power_scale
+
+    return scaled_noise, scaled_cutoff
+
+
+def _get_scaler(scaler_type):
+    """Returns a scaler to apply to the features.
+
+    :param binary_scaler: toggle to select between Binarizer and Normalizer scaler,
+        defaults to True (Binarizer)
+    :return: the initialized scaler, and its name
+    """
+    scaler = None
+    if scaler_type == "binarizer":
+        scaler = Binarizer(0.1, copy=False)
+    elif scaler_type == "normalizer":
+        scaler = Normalizer(copy=False)
+    elif scaler_type is not None:
+        raise ValueError("Invalid scaler type ({})! Accepted values: 'binarizer', 'normalizer'"\
+            .format(scaler_type))
+    return scaler
+
+
+def undersample_bf(features, beamformings):
     """ Halves the number of beamformings used in the features (expected use: 32 -> 16 BF)
 
     :param features: numpy 2D matrix, [sample_index, feature_index]
-    :param time_slots: Number of samples per beamforming index
     :param beamformings: Number of beamformings used to create the BFF
     :returns: Updated features
     """
+    time_slots = int(features.shape[1] / beamformings)
     mask = np.ones(time_slots * beamformings, dtype=bool)
-    for i in range(time_slots * beamformings):
+    for idx in range(time_slots * beamformings):
         #DIM 1 = BF, DIM 2 = TS
-        if (i//time_slots)%2 == 0:
-            mask[i] = False
+        if (idx//time_slots)%2 == 0:
+            mask[idx] = False
     features = features[:, mask]
     logging.warning("Attention: features undersampled to 16 BFs. Features shape: %s",
         features.shape)
@@ -101,16 +138,18 @@ def undersample_space(features, labels, distance):
     :returns: Updated features and labels
     """
     distance = int(distance) #just in case
+    assert distance >= 1, "The minimum distance between samples has to be an integer "\
+        "equal or greater than 1"
 
     mask = np.ones(labels.shape[0], dtype=bool)
-    for i in range(labels.shape[0]):
-        label_x_scaled = int(labels[i, 0] * 400)
+    for idx in range(labels.shape[0]):
+        label_x_scaled = int(labels[idx, 0] * 400)
         if label_x_scaled % distance > 0:
-            mask[i] = False
+            mask[idx] = False
         else:
-            label_y_scaled = int(labels[i, 1] * 400)
+            label_y_scaled = int(labels[idx, 1] * 400)
             if label_y_scaled % distance > 0:
-                mask[i] = False
+                mask[idx] = False
 
     features = features[mask, :]
     labels = labels[mask, :]
@@ -132,13 +171,13 @@ def position_to_class(labels, lateral_partition):
     """
     class_indexes = []
 
-    for i in range(labels.shape[0]):
+    for idx in range(labels.shape[0]):
 
-        x_index = int(math.floor(labels[i, 0] * lateral_partition))
+        x_index = int(math.floor(labels[idx, 0] * lateral_partition))
         if x_index == lateral_partition:
             x_index = lateral_partition - 1
 
-        y_index = int(math.floor(labels[i, 1] * lateral_partition))
+        y_index = int(math.floor(labels[idx, 1] * lateral_partition))
         if y_index == lateral_partition:
             y_index = lateral_partition - 1
 

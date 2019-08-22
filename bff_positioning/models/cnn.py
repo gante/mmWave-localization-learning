@@ -26,11 +26,14 @@ class CNN(BaseModel):
 
     # ---------------------------------------------------------------------------------------------
     # Model interface functions
-    def set_graph(self):
+    def set_graph(self, input_shape, output_shape):
         """ Sets the TF graph and initializes the session
+
+        :param input_shape: list with the input shape
+        :param output_shape: list with the output shape
         """
         # Sets: learning_rate_var, keep_prob, model_input, model_target
-        self._set_graph_io()
+        self._set_graph_io(input_shape, output_shape)
 
         # Adds the convolutional layers
         conv_output = None
@@ -52,7 +55,7 @@ class CNN(BaseModel):
             fcn_output = add_fc_layer(
                 fcn_output if fcn_output else conv_output_flat,
                 self.fc_neurons,
-                self.keep_prob
+                self.keep_prob_var
             )
 
         # Adds the output layer, storing the train step
@@ -61,11 +64,29 @@ class CNN(BaseModel):
         else:   # (regression)
             self.train_step = self._add_regression_output(fcn_output)
 
-        # Final step before training:
+        # Sets: saver, session; Initializes TF variables
         self._prepare_model_for_training()
 
+    def train_epoch(self, X, Y):
+        """ Trains the model for an epoch. Uses the default training function
+        (see BaseModel._train_epoch())
+
+        :param X: numpy array with the features
+        :param Y: numpy array with the labels
+        """
+        self._train_epoch(X, Y)
+
+    def epoch_end(self, X=None, Y=None):
+        """ Performs end of epoch operations, such as decaying the learning rate. Some
+        operations require a validation set.
+
+        :param X: numpy array with the validation features, defaults to None
+        :param Y: numpy array with the validation labels, defaults to None
+        """
+        self._epoch_end(X, Y)
+
     def close(self):
-        """Cleans up the session and any left over data
+        """ Cleans up the session and any left over data
         """
         self.session.close()
 
