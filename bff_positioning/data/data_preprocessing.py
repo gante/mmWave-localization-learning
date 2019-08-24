@@ -103,6 +103,11 @@ class Preprocessor():
         # Unpacks stored variables
         x_shift, y_shift = self.pos_shift
         x_grid, y_grid = self.pos_grid
+        if x_grid != y_grid:
+            logging.warning("WARNING: the area on which the experiments are going to be "
+                "performes is not square. The distance metric during the model training "
+                "will be ill defined. (e.g. the validation error in meters will not be correct)"
+                "\nPlease keep that in mind (or add that exception to the code :D).")
 
         # Loads the binary mode dataset (the step that creates this binary data will
         # be rewritten in python in the near future)
@@ -182,10 +187,10 @@ class Preprocessor():
 
             logging.info("Time slots to remove: %s", ts_to_delete)
 
-            for i in tqdm(range(self.features.shape[1])):
+            for idx in tqdm(range(self.features.shape[1])):
                 # DIM 1 = BF, DIM 2 = TS
-                if i % self.time_slots in ts_to_delete:
-                    mask[i] = False
+                if idx % self.time_slots in ts_to_delete:
+                    mask[idx] = False
 
             # Removes those slots from the data
             logging.info("Shape before TS reduction: %s", self.features.shape)
@@ -200,9 +205,9 @@ class Preprocessor():
         mask = np.ones(self.features.shape[0], dtype=bool)
         removed_pos = 0
 
-        for i in tqdm(range(self.features.shape[0])):
-            if sum(self.features[i, :]) == 0:
-                mask[i] = False
+        for idx in tqdm(range(self.features.shape[0])):
+            if sum(self.features[idx, :]) == 0:
+                mask[idx] = False
                 removed_pos += 1
 
         self.features = self.features[mask, :]
@@ -226,13 +231,13 @@ class Preprocessor():
         if self.run_sanity_checks:
             logging.info("Preparing plot to double-check existing data points...")
             # Creates (N+1) by (M+1) matrix. This means that its indexes go from 0 through N/M
-            to_plot = np.full([int(self.pos_grid[0])+1, int(self.pos_grid[1])+1], 0.0)
+            to_plot = np.full([int(self.pos_grid[0]) + 1, int(self.pos_grid[1]) + 1], 0.0)
             for pos_idx in tqdm(range(self.labels.shape[0])):
                 # Scales 0-1 to 0-N/M
                 pos_x = int(self.labels[pos_idx, 0] * self.pos_grid[0])
                 pos_y = int(self.labels[pos_idx, 1] * self.pos_grid[1])
                 # Flips Y (to correctly plot with imshow)
-                to_plot[pos_x, 400-pos_y] = 1.0
+                to_plot[pos_x, self.pos_grid[1] - pos_y] = 1.0
             # Local import to avoid messing non-gaphical interfaces
             matplotlib.use('agg')
             import matplotlib.pyplot as plt
@@ -247,9 +252,9 @@ class Preprocessor():
 
         :returns: previously stored features and labels
         """
-        assert self.check_existing_dataset(), "The dataset with the specified path ({}) either does "\
-            "not exists or was built with different simulation settings. Please run the data "\
-            "preprocessing step with the the same simulation settings!".format(
+        assert self.check_existing_dataset(), "The dataset with the specified path ({}) either "\
+            "does not exists or was built with different simulation settings. Please run the "\
+            "data preprocessing step with the the same simulation settings!".format(
             self.preprocessed_file)
 
         with open(self.preprocessed_file, 'rb') as dataset_file:

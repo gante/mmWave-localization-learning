@@ -83,7 +83,15 @@ class CNN(BaseModel):
         :param X: numpy array with the validation features, defaults to None
         :param Y: numpy array with the validation labels, defaults to None
         """
-        self._epoch_end(X, Y)
+        keep_training, val_score = self._epoch_end(X, Y)
+        return keep_training, val_score
+
+    def save(self, model_name="cnn"):
+        """ Stores all model data inside the specified folder, given the model name
+
+        :param model_name: the name of the model
+        """
+        self._save(model_name=model_name)
 
     def close(self):
         """ Cleans up the session and any left over data

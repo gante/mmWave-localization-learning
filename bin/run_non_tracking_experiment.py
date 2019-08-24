@@ -30,6 +30,7 @@ def main():
     ml_parameters = experiment_config['ml_parameters']
 
     # Loads the dataset
+    logging.info("Loading the dataset...")
     data_preprocessor = Preprocessor(data_parameters)
     features, labels = data_preprocessor.load_dataset()
 
@@ -40,6 +41,7 @@ def main():
         features, labels = undersample_space(features, labels, data_parameters["undersample_space"])
 
     # Initializes the model and prepares it for training
+    logging.info("Initializing the model...")
     if experiment_settings["model_type"] == "cnn":
         model = CNN(ml_parameters)
     else:
@@ -50,6 +52,7 @@ def main():
     model.set_graph(features.shape(), labels.shape())
 
     # Creates the validation set
+    logging.info("Creating validation set...")
     features_val, labels_val = create_noisy_features(
         features,
         labels,
@@ -58,8 +61,10 @@ def main():
     )
 
     # Runs the training loop
+    logging.info("\nStaring the training loop!\n")
     keep_training = True
     while keep_training:
+        logging.info("\nCreating noisy set for this epoch...")
         features_train, labels_train = create_noisy_features(
             features,
             labels,
@@ -68,12 +73,12 @@ def main():
         )
         model.train_epoch(features_train, labels_train)
         keep_training, val_score = model.epoch_end(features_val, labels_val)
-        logging.info("Current average validation distance: %s", val_score)
+        logging.info("Current average validation distance: %s meters", val_score)
 
-    # Store the trained model
-    model.save()
-
-    # Clean up
+    # Store the trained model and cleans up
+    logging.info("Saving and closing model.")
+    experiment_name = experiment_settings["model_type"] + '_' + experiment_settings["noise_std"]
+    model.save(model_name=experiment_name)
     model.close()
 
 if __name__ == '__main__':

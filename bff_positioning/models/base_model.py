@@ -35,6 +35,7 @@ class BaseModel():
     def __init__(self, model_settings):
 
         # Instatiates basic model settings
+        self.model_folder = model_settings["model_folder"]
         self.input_name = model_settings["input_name"]
         self.input_shape = model_settings["input_shape"]
         self.output_name = model_settings["output_name"]
@@ -52,6 +53,7 @@ class BaseModel():
         self.learning_rate_decay = model_settings["learning_rate_decay"]
 
         # Instantiates other common variables that might be used later
+        self.current_validation_score = None
         self.current_learning_rate = None
         self.current_epoch = None
         self.epochs_not_improving = None
@@ -107,19 +109,19 @@ class BaseModel():
             "The model sub-class did not implement a 'predict()' function."
         )
 
-    def save(self, folder):
-        """Prototype: save(self, folder)
+    def save(self, model_name):
+        """Prototype: save(self, model_name)
 
-        Stores all model data inside the specified folder
+        Stores all model data inside the specified folder, given the model name
         """
         raise NotImplementedError(
             "The model sub-class did not implement a 'save()' function."
         )
 
-    def load(self, folder):
-        """Prototype: save(self, folder)
+    def load(self, model_name):
+        """Prototype: load(self, model_name)
 
-        Loads all model data from the specified folder
+        Loads all model data from the specified folder, given the model name
         """
         raise NotImplementedError(
             "The model sub-class did not implement a 'load()' function."
@@ -173,11 +175,13 @@ class BaseModel():
         if self.current_epoch >= self.max_epochs:
             keep_training = False
         else:
+            # Decays LR
             self.current_learning_rate *= self.learning_rate_decay
             if X and Y:
                 val_predictions = self._predict_on_dataset(X)
                 val_score = self._score_predictions(Y, val_predictions, self.eval_metric)
                 if self.early_stopping:
+                    # Evaluates early stopping, if requested
                     keep_training = self._eval_early_stopping(val_score)
         return keep_training, val_score
 
@@ -226,11 +230,22 @@ class BaseModel():
     def _eval_early_stopping(self, validation_score):
         """ Evaluates the early stopping mechanism
 
-        :param validation_score: obvious, right?
+        :param validation_score: the validation score
         :return: boolean depicting whether the model should keep training
         """
         keep_training = True
-        # if validation_score > self.c              <--------------- stopped here
+        if self.current_validation_score is None:
+            self.current_validation_score = validation_score
+            self.epochs_not_improving = 0
+        elif validation_score > self.current_validation_score:
+            self.current_validation_score = validation_score
+            self.epochs_not_improving = 0
+        else:
+            self.epochs_not_improving += 1
+        if self.epochs_not_improving >= self.early_stopping:
+            logging.info("Early stopping - the model does not improve for %s epochs",
+                self.epochs_not_improving)
+            keep_training = False
         return keep_training
 
     # ---------------------------------------------------------------------------------------------
@@ -325,10 +340,22 @@ class BaseModel():
 
         # Initializes TF variables
         self.session.run(tf.global_variables_initializer())
-        trainable_parameters = int(np.sum([np.product([var_dim.value for var_dim in var.get_shape()])
-            for var in tf.trainable_variables()]))
+        trainable_parameters = int(np.sum(
+            [np.product([var_dim.value for var_dim in var.get_shape()])
+            for var in tf.trainable_variables()]
+        ))
         logging.info("Model initialized with %s trainable parameters!", trainable_parameters)
 
         # Initializes other train-related variables
         self.current_learning_rate = self.learning_rate
         self.current_epoch = 0
+
+    def _save(self, model_name):
+        """ Default function to save a model
+
+        :param model_name: the name of the model
+        """
+        if not os.path.exists(self.model_folder):
+            os.makedirs(self.model_folder)
+        save_path = os.path.join(self.model_folder, model_name)
+        self.saver.save(self.session, save_path)
