@@ -62,6 +62,14 @@ def create_noisy_features(
     if scaler is not None:
         noisy_features = scaler.fit_transform(noisy_features)
 
+    # If the model is a cnn, reshapes the input
+    if experiment_settings["model_type"] == "cnn":
+        beamformings = data_parameters["beamformings"]
+        time_slots = int(features.shape[1] / beamformings)
+        noisy_features = np.reshape(
+            noisy_features, (noisy_features.shape[0], beamformings, time_slots, 1)
+        )
+
     return noisy_features, noisy_labels
 
 

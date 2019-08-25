@@ -26,7 +26,7 @@ def weight_variable(shape, std=None):
         fan_in, fan_out = _get_fans(shape)
         #TODO: try removing fan_out [https://arxiv.org/pdf/1502.01852.pdf] <----
         std = np.sqrt(2. / (fan_in + fan_out))
-    initial = tf.truncated_normal(shape, stddev=std)
+    initial = tf.random.truncated_normal(shape, stddev=std)
     return tf.Variable(initial)
 
 
@@ -55,22 +55,22 @@ def add_linear_layer(input_data, n_dims, bias=0.01):
     :returns: TF tensor with this layer's output
     """
     assert len(input_data.shape) == 2, "You must flatten your input before this layer!"
-    input_length = input_data.shape[1]
+    input_length = int(input_data.shape[1])
     w = weight_variable([input_length, n_dims])
     b = bias_variable([n_dims], bias=bias)
     return tf.matmul(input_data, w) + b
 
 
-def add_fc_layer(input_data, neurons, keep_prob):
+def add_fc_layer(input_data, neurons, dropout):
     """ Adds a fully connected layer to the input, with dropout, returning its output
 
     :param input_data: TF tensor with this layer's input
     :param neurons: number this layer's neurons
-    :param keep_prob: TF variable with (1 - dropout) probability
+    :param dropout: TF variable with the dropout probability
     :returns: TF tensor with this layer's output
     """
     h = tf.nn.relu(add_linear_layer(input_data, neurons))
-    return tf.nn.dropout(h, keep_prob)
+    return tf.nn.dropout(h, rate=dropout)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def conv2d(x, W):
 
 def max_pool(data_in, x, y):
     """Maxpool layer wrapper"""
-    return tf.nn.max_pool(data_in, ksize=[1, x, y, 1], strides=[1, x, y, 1], padding='SAME')
+    return tf.nn.max_pool2d(data_in, ksize=[1, x, y, 1], strides=[1, x, y, 1], padding='SAME')
 
 
 def add_conv_layer(filter_shape, n_filters, max_pool_shape, input_data):
@@ -94,10 +94,11 @@ def add_conv_layer(filter_shape, n_filters, max_pool_shape, input_data):
     :param input_data: TF tensor with this layer's input
     :returns: TF tensor with this layer's output
     """
-    assert len(input_data.shape) == 4, "An input data tensor with 4 dimentions was expected"
+    assert len(input_data.shape) == 4, "An input data tensor with 4 dimentions was expected. "\
+        "(Got {} dimentions)".format(input_data.shape)
     assert len(filter_shape) == 2, "Only 2D convolutions are supported (so far :D)"
     assert len(max_pool_shape) == 2, "Only 2D maxpool is supported (so far :D)"
-    prev_layer_channels = input_data.shape[-1]
+    prev_layer_channels = int(input_data.shape[-1])
     w_conv = weight_variable([filter_shape[0], filter_shape[1], prev_layer_channels, n_filters])
     b_conv = bias_variable([n_filters])
     h_conv = tf.nn.relu(conv2d(input_data, w_conv) + b_conv)

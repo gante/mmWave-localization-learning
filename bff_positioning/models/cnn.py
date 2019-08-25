@@ -18,6 +18,8 @@ class CNN(BaseModel):
         super().__init__(model_settings=model_settings)
 
         # Instanciates CNN-specific variables
+        self.input_reshape = model_settings["input_reshape"] \
+            if "input_reshape" in model_settings else None
         self.conv_layers = model_settings["conv_layers"]
         self.conv_filters = model_settings["conv_filters"]
         self.conv_filter_size = model_settings["conv_filter_size"]
@@ -26,14 +28,11 @@ class CNN(BaseModel):
 
     # ---------------------------------------------------------------------------------------------
     # Model interface functions
-    def set_graph(self, input_shape, output_shape):
+    def set_graph(self):
         """ Sets the TF graph and initializes the session
-
-        :param input_shape: list with the input shape
-        :param output_shape: list with the output shape
         """
         # Sets: learning_rate_var, keep_prob, model_input, model_target
-        self._set_graph_io(input_shape, output_shape)
+        self._set_graph_io()
 
         # Adds the convolutional layers
         conv_output = None
@@ -42,7 +41,7 @@ class CNN(BaseModel):
                 self.conv_filter_size[layer_idx],
                 self.conv_filters[layer_idx],
                 self.conv_maxpool[layer_idx],
-                conv_output if conv_output else self.model_input,
+                conv_output if conv_output is not None else self.model_input,
             )
 
         # Reshapes last convolutional output to a flat layer
@@ -53,9 +52,9 @@ class CNN(BaseModel):
         fcn_output = None
         for _ in range(self.fc_layers):
             fcn_output = add_fc_layer(
-                fcn_output if fcn_output else conv_output_flat,
+                fcn_output if fcn_output is not None else conv_output_flat,
                 self.fc_neurons,
-                self.keep_prob_var
+                self.dropout_var
             )
 
         # Adds the output layer, storing the train step
@@ -113,5 +112,6 @@ class CNN(BaseModel):
                     "convolutions are supported. (Check the {}-th layer on {})".format(layer,
                     hyperparam)
         # Checks other settings
-        assert len(self.input_shape) == 3, "For a CNN network, the input shape should have 3 "\
-            "dimentions (got {})".format(len(self.input_shape))
+        assert len(self.input_shape) == 3 or len(self.input_reshape) == 3, "For a CNN network, "\
+            "the input shape (or reshape) should have 3 dimentions (got {})".format(
+            len(self.input_shape))

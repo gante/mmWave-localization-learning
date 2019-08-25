@@ -5,6 +5,7 @@ The arguments are loaded from a .yaml file, which is the input argument of this 
 (Instructions to run: `python run_non_tracking_experiment.py <path to .yaml file>`)
 """
 
+import os
 import sys
 import logging
 import yaml
@@ -12,6 +13,30 @@ import yaml
 from bff_positioning.data import Preprocessor, create_noisy_features, undersample_bf,\
     undersample_space
 from bff_positioning.models import CNN
+
+# -------------------------------------------------------------------------------------------------
+# Workaround TF logger problem in TF 1.14
+try:
+    # Capirca uses Google's abseil-py library, which uses a Google-specific
+    # wrapper for logging. That wrapper will write a warning to sys.stderr if
+    # the Google command-line flags library has not been initialized.
+    #
+    # https://github.com/abseil/abseil-py/blob/pypi-v0.7.1/absl/logging/__init__.py#L819-L825
+    #
+    # This is not right behavior for Python code that is invoked outside of a
+    # Google-authored main program. Use knowledge of abseil-py to disable that
+    # warning; ignore and continue if something goes wrong.
+    import absl.logging
+
+    # https://github.com/abseil/abseil-py/issues/99
+    logging.root.removeHandler(absl.logging._absl_handler)
+    # https://github.com/abseil/abseil-py/issues/102
+    absl.logging._warn_preinit_stderr = False
+except Exception:
+    pass
+# Workaround TF logger problem in TF 1.14
+# -------------------------------------------------------------------------------------------------
+
 
 def main():
     """Main block of code, which runs the experiment"""
@@ -49,35 +74,37 @@ def main():
             "'cnn' is supported. [If you were looking for the HCNNs: sorry, the code was quite "
             "lengthy, so I moved its refactoring into a future to do. Please contact me if you "
             "want to experiment with it.]".format(experiment_settings["model_type"]))
-    model.set_graph(features.shape(), labels.shape())
+    model.set_graph()
 
     # Creates the validation set
     logging.info("Creating validation set...")
     features_val, labels_val = create_noisy_features(
         features,
         labels,
+        experiment_settings,
         data_parameters,
-        experiment_settings
     )
 
     # Runs the training loop
     logging.info("\nStaring the training loop!\n")
     keep_training = True
     while keep_training:
-        logging.info("\nCreating noisy set for this epoch...")
+        logging.info("Creating noisy set for this epoch...")
         features_train, labels_train = create_noisy_features(
             features,
             labels,
+            experiment_settings,
             data_parameters,
-            experiment_settings
         )
         model.train_epoch(features_train, labels_train)
         keep_training, val_score = model.epoch_end(features_val, labels_val)
-        logging.info("Current average validation distance: %s meters", val_score)
+        # Upscales the validation score back to the original scale
+        val_score *= data_parameters["pos_grid"][0]
+        logging.info("Current average validation distance: %s m\n", val_score)
 
     # Store the trained model and cleans up
     logging.info("Saving and closing model.")
-    experiment_name = experiment_settings["model_type"] + '_' + experiment_settings["noise_std"]
+    experiment_name = os.path.basename(sys.argv[1]).split('.')[0]
     model.save(model_name=experiment_name)
     model.close()
 

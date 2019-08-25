@@ -4,7 +4,6 @@ shared by multiple model types.
 
 import os
 import logging
-import math
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
@@ -62,7 +61,7 @@ class BaseModel():
         self.session = None
         self.train_step = None
         self.learning_rate_var = None
-        self.keep_prob_var = None
+        self.dropout_var = None
         self.model_input = None
         self.model_output = None
         self.model_target = None
@@ -72,8 +71,8 @@ class BaseModel():
 
     # ---------------------------------------------------------------------------------------------
     # Model interface functions
-    def set_graph(self, input_shape, output_shape):
-        """Prototype: setup(self, input_shape, output_shape)
+    def set_graph(self):
+        """Prototype: setup(self)
 
         Given the settings, sets up the model graph for training
         """
@@ -145,9 +144,9 @@ class BaseModel():
         :param Y: numpy array with the labels
         """
         assert X.shape[0] == Y.shape[0], "X and Y have a different number of samples!"
-        max_batches = int(math.ceil(X.shape[0] / self.batch_size))
+        max_batches = int(np.ceil(X.shape[0] / self.batch_size))
         X, Y = shuffle(X, Y)
-        train_string = "Training on epoch: {:4}; LR: {:4.4f}"
+        train_string = "Training on epoch: {:4} || LR: {:3.2E} ||"
 
         for batch_idx in tqdm(
             range(max_batches),
@@ -155,12 +154,14 @@ class BaseModel():
         ):
             start_batch = batch_idx * self.batch_size
             end_batch = min((batch_idx + 1) * self.batch_size, X.shape[0])
-            self.train_step.run(feed_dict={
-                self.model_input: X[start_batch:end_batch],
-                self.model_target: Y[start_batch:end_batch],
-                self.keep_prob_var: 1.0 - self.dropout,
-                self.learning_rate_var: self.current_learning_rate,
-            })
+            self.train_step.run(
+                feed_dict={
+                    self.model_input: X[start_batch:end_batch, ...],
+                    self.model_target: Y[start_batch:end_batch, ...],
+                    self.dropout_var: self.dropout,
+                    self.learning_rate_var: self.current_learning_rate,
+                },
+                session=self.session)
         self.current_epoch += 1
 
     def _epoch_end(self, X=None, Y=None):
@@ -177,7 +178,7 @@ class BaseModel():
         else:
             # Decays LR
             self.current_learning_rate *= self.learning_rate_decay
-            if X and Y:
+            if X is not None and Y is not None:
                 val_predictions = self._predict_on_dataset(X)
                 val_score = self._score_predictions(Y, val_predictions, self.eval_metric)
                 if self.early_stopping:
@@ -191,15 +192,18 @@ class BaseModel():
         :param X: numpy array with the features
         :return: an numpy array with the predictions
         """
-        max_batches = int(math.ceil(X.shape[0] / self.batch_size_inference))
+        max_batches = int(np.ceil(X.shape[0] / self.batch_size_inference))
         predictions = []
         for batch_idx in range(max_batches):
-            start_batch = batch_idx * self.batch_size
-            end_batch = min((batch_idx + 1) * self.batch_size, X.shape[0])
-            batch_predictions = self.model_output.run(feed_dict={
-                self.model_input: X[start_batch:end_batch],
-                self.keep_prob_var: 1.0,
-            })
+            start_batch = batch_idx * self.batch_size_inference
+            end_batch = min((batch_idx + 1) * self.batch_size_inference, X.shape[0])
+            batch_predictions = self.model_output.eval(
+                feed_dict={
+                    self.model_input: X[start_batch:end_batch, ...],
+                    self.dropout_var: 0.0,
+                },
+                session=self.session
+            )
             batch_size = end_batch - start_batch
             predictions.extend([batch_predictions[idx, ...] for idx in range(batch_size)])
         return np.asarray(predictions)
@@ -223,8 +227,8 @@ class BaseModel():
             score = metrics.f1_score(y_true, y_pred)
         elif score_type == 'mean_square_error':
             score = metrics.mean_squared_error(y_true, y_pred)
-        elif score == 'euclidean_distance':
-            score = np.mean(np.sqrt(np.sum(np.square(y_true - y_pred)), 1))
+        elif score_type == 'euclidean_distance':
+            score = np.mean(np.sqrt(np.sum(np.square(y_true - y_pred), 1)))
         return score
 
     def _eval_early_stopping(self, validation_score):
@@ -250,31 +254,32 @@ class BaseModel():
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: model input/output
-    def _set_graph_io(self, input_shape, output_shape):
+    def _set_graph_io(self):
         """ Auxiliary function to "set_graph()". Sets the graph input and trainable target,
         as well as some other basic variables common to all model types
-
-        :param input_shape: list with the input shape
-        :param output_shape: list with the output shape
         """
         # The current learning rate
-        self.learning_rate_var = tf.placeholder(tf.float32, shape=[])
+        self.learning_rate_var = tf.compat.v1.placeholder(tf.float32, shape=[])
         # (1 - Dropout) probability
-        self.keep_prob_var = tf.placeholder(tf.float32, name='keep_prob')
+        self.dropout_var = tf.compat.v1.placeholder(tf.float32, name='dropout')
 
-        self.model_input = tf.placeholder(
+        self.model_input = tf.compat.v1.placeholder(
             tf.float32,
-            shape=[None] + input_shape,
+            shape=[None] + self.input_shape,
             name=self.input_name,
         )
         if self.output_type == "regression":
-            self.model_target = tf.placeholder(
+            self.model_target = tf.compat.v1.placeholder(
                 tf.float32,
-                shape=[None] + output_shape,
+                shape=[None] + self.output_shape,
                 name=self.output_name
             )
         elif self.output_type == "classification":
-            self.model_target = tf.placeholder(tf.int64, shape=[None], name=self.output_name)
+            self.model_target = tf.compat.v1.placeholder(
+                tf.int64,
+                shape=[None],
+                name=self.output_name
+            )
         else:
             raise ValueError("Unknown 'output_type' ({}). Only 'classification' and 'regression' "
                 "are accepted.".format(self.output_type))
@@ -286,7 +291,9 @@ class BaseModel():
         :returns: the trainable step
         """
         # Defines the logits and the softmax output
-        logits = add_linear_layer(input_data, self.output_shape)
+        assert len(self.output_shape) == 1, "This function is not ready for outputs with higher "\
+            "dimensionality"
+        logits = add_linear_layer(input_data, self.output_shape[0])
         self.model_output = tf.nn.softmax(logits, name=self.output_name)
 
         # Defines the loss function [mean(cross_entropy(target_value - softmax))]
@@ -296,7 +303,7 @@ class BaseModel():
         ))
 
         # Defines the optimizer (ADAM) and the train step
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate_var)
+        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
         train_step = optimizer.minimize(cross_entropy)
         return train_step
 
@@ -307,14 +314,16 @@ class BaseModel():
         :returns: the trainable step
         """
         # Defines the regression output (used to learn), and its clipped version (used to predict)
-        regression = add_linear_layer(input_data, self.output_shape, bias=0.5)
+        assert len(self.output_shape) == 1, "This function is not ready for outputs with higher "\
+            "dimensionality"
+        regression = add_linear_layer(input_data, self.output_shape[0], bias=0.5)
         self.model_output = tf.clip_by_value(regression, 0.0, 1.0, name=self.output_name)
 
         # Defines the loss function [MSE = mean(square(target_value - regression))]
         mse = tf.reduce_mean(tf.square(self.model_target - regression))
 
         # Defines the optimizer (ADAM) and the train step
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate_var)
+        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
         train_step = optimizer.minimize(mse)
         return train_step
 
@@ -333,16 +342,18 @@ class BaseModel():
         """ Self-documenting :D
         """
         # Sets the saver
-        self.saver = tf.train.Saver()
+        self.saver = tf.compat.v1.train.Saver()
 
         # Sets the session
-        self.session = tf.Session(config=tf.ConfigProto(gpu_options={"allow_growth": True}))
+        self.session = tf.compat.v1.Session(
+            config=tf.compat.v1.ConfigProto(gpu_options={"allow_growth": True})
+        )
 
         # Initializes TF variables
-        self.session.run(tf.global_variables_initializer())
+        self.session.run(tf.compat.v1.global_variables_initializer())
         trainable_parameters = int(np.sum(
             [np.product([var_dim.value for var_dim in var.get_shape()])
-            for var in tf.trainable_variables()]
+            for var in tf.compat.v1.trainable_variables()]
         ))
         logging.info("Model initialized with %s trainable parameters!", trainable_parameters)
 

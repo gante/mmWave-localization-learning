@@ -41,8 +41,8 @@ ml_parameters:
     input_shape: [32, 81, 1]    # BF, usable timeslots, 1 "data channel"
     output_name: "location"
     output_type: "regression"
-    output_shape: 2
-    eval_metric: "euclidian_distance"
+    output_shape: [2]
+    eval_metric: "euclidean_distance"
     model_folder: "experiments_results/"
 
     # basic model hyperparams
