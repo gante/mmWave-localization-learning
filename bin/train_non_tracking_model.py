@@ -7,6 +7,7 @@ The arguments are loaded from a .yaml file, which is the input argument of this 
 
 import os
 import sys
+import time
 import logging
 import yaml
 
@@ -18,6 +19,7 @@ from bff_positioning.models import CNN
 def main():
     """Main block of code, which runs the training"""
 
+    start = time.time()
     logging.basicConfig(level="INFO")
 
     # Load the .yaml data and unpacks it
@@ -91,6 +93,11 @@ def main():
     experiment_name = os.path.basename(sys.argv[1]).split('.')[0]
     model.save(model_name=experiment_name)
     model.close()
+
+    # Prints elapsed time
+    end = time.time()
+    exec_time = (end-start)
+    logging.info("Total execution time: %.5E seconds", exec_time)
 
 if __name__ == '__main__':
     main()

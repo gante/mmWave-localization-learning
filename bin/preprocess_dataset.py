@@ -6,6 +6,7 @@ The arguments are loaded from a .yaml file, which is the input argument of this 
 """
 
 import sys
+import time
 import logging
 import yaml
 
@@ -14,6 +15,7 @@ from bff_positioning.data import Preprocessor
 def main():
     """Main block of code, which runs the data-preprocessing"""
 
+    start = time.time()
     logging.basicConfig(level="INFO")
 
     # Load the .yaml data
@@ -40,6 +42,11 @@ def main():
     else:
         logging.info("The dataset already exists in %s, skipping the dataset creation "
             "steps!", experiment_config['data_parameters']['preprocessed_file'])
+
+    # Prints elapsed time
+    end = time.time()
+    exec_time = (end-start)
+    logging.info("Total execution time: %.5E seconds", exec_time)
 
 
 if __name__ == '__main__':
