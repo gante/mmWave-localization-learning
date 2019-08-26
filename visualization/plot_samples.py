@@ -19,6 +19,7 @@ from bff_positioning.data import Preprocessor
 
 SAMPLES_PER_PLOT = 10
 GRID_SIZE = 400
+PLOT_PATH = 'bff_samples.pdf'
 
 
 def main():
@@ -61,14 +62,13 @@ def main():
         cax = plt.imshow(np.transpose(bff_2d), vmin=0.0, vmax=1.2)
 
     # Saves the plot
-    plot_location = 'bff_samples.pdf'
-    logging.info("Plot written to %s", plot_location)
     cbar = plt.colorbar(cax, ticks=[0.0, 0.2, 0.7, 1.2])
     cbar.ax.set_yticklabels(['no_data', '-150dBm', '-100dBm', '-50dBm'])
-    plt.savefig(plot_location, format='pdf')
+    plt.savefig(PLOT_PATH, format='pdf')
+    logging.info("Plot written to %s", PLOT_PATH)
 
     # Prints a few final notes
-    logging.info("NOTE 1 - this script was built for the default settings")
+    logging.info("NOTE 1 - this script was built for the default data settings")
     logging.info("NOTE 2 - the position of the sample (X and Y) is relative to the BS")
 
 

@@ -30,6 +30,8 @@ experiment_settings:
     noise_std: 6                #in dB  [Gaussian noise applied over dB values -> "log-normal"]
     scaler_type: "binarizer"
     model_type: "cnn"
+    tests_per_position: 30
+    predictions_file: "model_predictions"
 
 
 # -------------------------------------------------------------------------------------------------

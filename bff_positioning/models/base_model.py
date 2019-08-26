@@ -207,7 +207,7 @@ class BaseModel():
             # Decays LR
             self.current_learning_rate *= self.learning_rate_decay
             if y_true is not None and y_pred is not None:
-                val_score = self._score_predictions(y_true, y_pred, self.validation_metric)
+                val_score = score_predictions(y_true, y_pred, self.validation_metric)
                 if self.early_stopping:
                     # Evaluates early stopping, if requested
                     keep_training = self._eval_early_stopping(val_score)
@@ -234,29 +234,6 @@ class BaseModel():
             batch_size = end_batch - start_batch
             predictions.extend([batch_predictions[idx, ...] for idx in range(batch_size)])
         return np.asarray(predictions)
-
-    @staticmethod
-    def _score_predictions(y_true, y_pred, score_type):
-        """ Scores the model predictions agains the ground truth, given the score type
-
-        :param y_true: ground truth
-        :param y_pred: model predictions
-        :param score_time: the type of score
-        :retuns: the predictions' score
-        """
-        score = None
-        if score_type not in SCORE_TYPES:
-            raise ValueError("{} is not a valid score type. Implemented score types: {}".format(
-                score_type, SCORE_TYPES))
-        if score_type == 'accuracy':
-            score = metrics.accuracy_score(y_true, y_pred)
-        elif score_type == 'f1_score':
-            score = metrics.f1_score(y_true, y_pred)
-        elif score_type == 'mean_square_error':
-            score = metrics.mean_squared_error(y_true, y_pred)
-        elif score_type == 'euclidean_distance':
-            score = np.mean(np.sqrt(np.sum(np.square(y_true - y_pred), 1)))
-        return score
 
     def _eval_early_stopping(self, validation_score):
         """ Evaluates the early stopping mechanism
@@ -432,3 +409,26 @@ class BaseModel():
         """ Default function to close the session
         """
         self.session.close()
+
+
+def score_predictions(y_true, y_pred, score_type):
+    """ Scores the model predictions agains the ground truth, given the score type
+
+    :param y_true: ground truth
+    :param y_pred: model predictions
+    :param score_time: the type of score
+    :retuns: the predictions' score
+    """
+    score = None
+    if score_type not in SCORE_TYPES:
+        raise ValueError("{} is not a valid score type. Implemented score types: {}".format(
+            score_type, SCORE_TYPES))
+    if score_type == 'accuracy':
+        score = metrics.accuracy_score(y_true, y_pred)
+    elif score_type == 'f1_score':
+        score = metrics.f1_score(y_true, y_pred)
+    elif score_type == 'mean_square_error':
+        score = metrics.mean_squared_error(y_true, y_pred)
+    elif score_type == 'euclidean_distance':
+        score = np.mean(np.sqrt(np.sum(np.square(y_true - y_pred), 1)))
+    return score
