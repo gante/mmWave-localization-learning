@@ -6,7 +6,11 @@ venv/
 __pycache__/
 dist/
 **/*.egg-info
+
 # Unit tests
 .pytest_cache
 .coverage
 .coverage.*
+
+# Repo specific
+__TODO.txt

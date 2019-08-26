@@ -14,29 +14,6 @@ from bff_positioning.data import Preprocessor, create_noisy_features, undersampl
     undersample_space, get_95th_percentile
 from bff_positioning.models import CNN
 
-# -------------------------------------------------------------------------------------------------
-# Workaround TF logger problem in TF 1.14
-try:
-    # Capirca uses Google's abseil-py library, which uses a Google-specific
-    # wrapper for logging. That wrapper will write a warning to sys.stderr if
-    # the Google command-line flags library has not been initialized.
-    #
-    # https://github.com/abseil/abseil-py/blob/pypi-v0.7.1/absl/logging/__init__.py#L819-L825
-    #
-    # This is not right behavior for Python code that is invoked outside of a
-    # Google-authored main program. Use knowledge of abseil-py to disable that
-    # warning; ignore and continue if something goes wrong.
-    import absl.logging
-
-    # https://github.com/abseil/abseil-py/issues/99
-    logging.root.removeHandler(absl.logging._absl_handler)  #pylint: disable=protected-access
-    # https://github.com/abseil/abseil-py/issues/102
-    absl.logging._warn_preinit_stderr = False               #pylint: disable=protected-access
-except Exception:                                           #pylint: disable=broad-except
-    pass
-# Workaround TF logger problem in TF 1.14
-# -------------------------------------------------------------------------------------------------
-
 
 def main():
     """Main block of code, which runs the experiment"""

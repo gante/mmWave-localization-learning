@@ -17,6 +17,30 @@ from .layer_functions import add_linear_layer
 SCORE_TYPES = ['accuracy', 'f1_score', 'mean_square_error', 'euclidean_distance']
 
 
+# -------------------------------------------------------------------------------------------------
+# Workaround TF logger problem in TF 1.14
+try:
+    # Capirca uses Google's abseil-py library, which uses a Google-specific
+    # wrapper for logging. That wrapper will write a warning to sys.stderr if
+    # the Google command-line flags library has not been initialized.
+    #
+    # https://github.com/abseil/abseil-py/blob/pypi-v0.7.1/absl/logging/__init__.py#L819-L825
+    #
+    # This is not right behavior for Python code that is invoked outside of a
+    # Google-authored main program. Use knowledge of abseil-py to disable that
+    # warning; ignore and continue if something goes wrong.
+    import absl.logging
+
+    # https://github.com/abseil/abseil-py/issues/99
+    logging.root.removeHandler(absl.logging._absl_handler)  #pylint: disable=protected-access
+    # https://github.com/abseil/abseil-py/issues/102
+    absl.logging._warn_preinit_stderr = False               #pylint: disable=protected-access
+except Exception:                                           #pylint: disable=broad-except
+    pass
+# Workaround TF logger problem in TF 1.14
+# -------------------------------------------------------------------------------------------------
+
+
 class BaseModel():
     """ This class defines a common model interface. The models defined within this project
     should explicitly implement all depicted interface functions, to abstract the details
@@ -336,6 +360,7 @@ class BaseModel():
         if self.optimizer_type == "ADAM":
             return tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
         elif self.optimizer_type == "RADAM":
+            #TODO: add total steps
             return RAdamOptimizer(learning_rate=self.learning_rate_var)
         else:
             raise ValueError("{} is not a supported optimizer type. Supported optimizer types: "

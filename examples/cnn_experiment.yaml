@@ -42,10 +42,10 @@ ml_parameters:
     output_type: "regression"
     output_shape: [2]
     validation_metric: "euclidean_distance"
-    model_folder: "../experiments_results/"
+    model_folder: "../experiments_results/cnn/"
 
     # basic model hyperparams
-    optimizer_type: "RADAM"
+    optimizer_type: "ADAM"
     batch_size: 64
     batch_size_inference: 256
     dropout: 0.01
