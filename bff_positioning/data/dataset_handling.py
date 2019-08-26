@@ -1,7 +1,6 @@
 """ Python module that contains functions to manipulate the datasets used to train the models
 """
 
-import math
 import logging
 import numpy as np
 
@@ -181,11 +180,11 @@ def position_to_class(labels, lateral_partition):
 
     for idx in range(labels.shape[0]):
 
-        x_index = int(math.floor(labels[idx, 0] * lateral_partition))
+        x_index = int(np.floor(labels[idx, 0] * lateral_partition))
         if x_index == lateral_partition:
             x_index = lateral_partition - 1
 
-        y_index = int(math.floor(labels[idx, 1] * lateral_partition))
+        y_index = int(np.floor(labels[idx, 1] * lateral_partition))
         if y_index == lateral_partition:
             y_index = lateral_partition - 1
 
@@ -195,3 +194,13 @@ def position_to_class(labels, lateral_partition):
     class_indexes = np.asarray(class_indexes)
 
     return class_indexes
+
+
+def get_95th_percentile(y_true, y_pred, rescale_factor=1.):
+    """ Gets the 95th percentile for the distance
+
+    :param y_true: ground truth
+    :param y_pred: model predictions
+    """
+    array_of_distances = np.sqrt(np.sum(np.square(y_true - y_pred), 1))
+    return np.percentile(array_of_distances, 95) * rescale_factor

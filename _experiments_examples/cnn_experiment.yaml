@@ -6,9 +6,8 @@ description: Parameters used to train a CNN for the BFF problem
 # understand the consequences in the code. Most parameters came from the ray-tracing simulations
 # themselves
 data_parameters:
-    #input_file: '../data_preprocessing/data_processed/final_table'
-    input_file: '../local_run/data/final_table'
-    preprocessed_file: '../local_run/data/preprocessed_dataset'
+    input_file: '../bff_data/final_table'
+    preprocessed_file: '../bff_data/preprocessed_dataset'
     max_time: 6                 #in microseconds
     sample_freq: 20             #in MHz
     beamformings: 32
@@ -42,10 +41,11 @@ ml_parameters:
     output_name: "location"
     output_type: "regression"
     output_shape: [2]
-    eval_metric: "euclidean_distance"
-    model_folder: "experiments_results/"
+    validation_metric: "euclidean_distance"
+    model_folder: "../experiments_results/"
 
     # basic model hyperparams
+    optimizer_type: "RADAM"
     batch_size: 64
     batch_size_inference: 256
     dropout: 0.01

@@ -11,7 +11,7 @@ import logging
 import yaml
 
 from bff_positioning.data import Preprocessor, create_noisy_features, undersample_bf,\
-    undersample_space
+    undersample_space, get_95th_percentile
 from bff_positioning.models import CNN
 
 # -------------------------------------------------------------------------------------------------
@@ -29,10 +29,10 @@ try:
     import absl.logging
 
     # https://github.com/abseil/abseil-py/issues/99
-    logging.root.removeHandler(absl.logging._absl_handler)
+    logging.root.removeHandler(absl.logging._absl_handler)  #pylint: disable=protected-access
     # https://github.com/abseil/abseil-py/issues/102
-    absl.logging._warn_preinit_stderr = False
-except Exception:
+    absl.logging._warn_preinit_stderr = False               #pylint: disable=protected-access
+except Exception:                                           #pylint: disable=broad-except
     pass
 # Workaround TF logger problem in TF 1.14
 # -------------------------------------------------------------------------------------------------
@@ -97,10 +97,17 @@ def main():
             data_parameters,
         )
         model.train_epoch(features_train, labels_train)
-        keep_training, val_score = model.epoch_end(features_val, labels_val)
-        # Upscales the validation score back to the original scale
-        val_score *= data_parameters["pos_grid"][0]
-        logging.info("Current average validation distance: %s m\n", val_score)
+        predictions_val = model.predict(features_val)
+        keep_training, val_avg_dist = model.epoch_end(labels_val, predictions_val)
+        # Upscales the validation score back to the original scale and gets the 95th percentile
+        val_avg_dist *= data_parameters["pos_grid"][0]
+        val_95_perc = get_95th_percentile(
+            labels_val,
+            predictions_val,
+            rescale_factor=data_parameters["pos_grid"][0]
+        )
+        logging.info("Current avg val. distance: %.5f m || 95th percentile:  %.5f m\n",
+            val_avg_dist, val_95_perc)
 
     # Store the trained model and cleans up
     logging.info("Saving and closing model.")

@@ -85,6 +85,14 @@ class CNN(BaseModel):
         keep_training, val_score = self._epoch_end(X, Y)
         return keep_training, val_score
 
+    def predict(self, X):
+        """ Returns the predictions on the given data
+
+        :param X: numpy array with the features
+        :return: an numpy array with the predictions
+        """
+        return self._predict(X)
+
     def save(self, model_name="cnn"):
         """ Stores all model data inside the specified folder, given the model name
 

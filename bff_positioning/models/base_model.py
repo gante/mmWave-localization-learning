@@ -5,10 +5,12 @@ shared by multiple model types.
 import os
 import logging
 import numpy as np
-import tensorflow as tf
 from tqdm import tqdm
 from sklearn.utils import shuffle
 import sklearn.metrics as metrics
+
+import tensorflow as tf
+from keras_radam.training import RAdamOptimizer
 
 from .layer_functions import add_linear_layer
 
@@ -40,7 +42,7 @@ class BaseModel():
         self.output_name = model_settings["output_name"]
         self.output_type = model_settings["output_type"]
         self.output_shape = model_settings["output_shape"]
-        self.eval_metric = model_settings["eval_metric"]
+        self.validation_metric = model_settings["validation_metric"]
         self.batch_size = model_settings["batch_size"]
         self.batch_size_inference = model_settings["batch_size_inference"]
         self.dropout = model_settings["dropout"]
@@ -50,6 +52,7 @@ class BaseModel():
         self.fc_neurons = model_settings["fc_neurons"]
         self.learning_rate = model_settings["learning_rate"]
         self.learning_rate_decay = model_settings["learning_rate_decay"]
+        self.optimizer_type = model_settings["optimizer_type"]
 
         # Instantiates other common variables that might be used later
         self.current_validation_score = None
@@ -102,7 +105,7 @@ class BaseModel():
     def predict(self, X):
         """Prototype: predict(self, X)
 
-        Predicts on the given data, and scores the prediction
+        Returns the preditions on the given data
         """
         raise NotImplementedError(
             "The model sub-class did not implement a 'predict()' function."
@@ -164,12 +167,13 @@ class BaseModel():
                 session=self.session)
         self.current_epoch += 1
 
-    def _epoch_end(self, X=None, Y=None):
+    def _epoch_end(self, y_true=None, y_pred=None):
         """ Default end of epoch routine - Performs end of epoch operations, such as decaying the
         learning rate. Some operations, such as the early stopping, require a validation set.
 
-        :param X: numpy array with the validation features, defaults to None
-        :param Y: numpy array with the validation labels, defaults to None
+        :param y_true: ground truth, defaults to None
+        :param y_pred: model predictions, defaults to None
+        :returns: boolean indicating whether the model should keep training, validation score
         """
         keep_training = True
         val_score = None
@@ -178,16 +182,15 @@ class BaseModel():
         else:
             # Decays LR
             self.current_learning_rate *= self.learning_rate_decay
-            if X is not None and Y is not None:
-                val_predictions = self._predict_on_dataset(X)
-                val_score = self._score_predictions(Y, val_predictions, self.eval_metric)
+            if y_true is not None and y_pred is not None:
+                val_score = self._score_predictions(y_true, y_pred, self.validation_metric)
                 if self.early_stopping:
                     # Evaluates early stopping, if requested
                     keep_training = self._eval_early_stopping(val_score)
         return keep_training, val_score
 
-    def _predict_on_dataset(self, X):
-        """ Returns the predictions for a complete dataset X
+    def _predict(self, X):
+        """ Returns the predictions on the given data
 
         :param X: numpy array with the features
         :return: an numpy array with the predictions
@@ -241,7 +244,7 @@ class BaseModel():
         if self.current_validation_score is None:
             self.current_validation_score = validation_score
             self.epochs_not_improving = 0
-        elif validation_score > self.current_validation_score:
+        elif validation_score < self.current_validation_score:
             self.current_validation_score = validation_score
             self.epochs_not_improving = 0
         else:
@@ -302,8 +305,8 @@ class BaseModel():
             logits=logits
         ))
 
-        # Defines the optimizer (ADAM) and the train step
-        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
+        # Defines the optimizer and the train step
+        optimizer = self._set_optimizer()
         train_step = optimizer.minimize(cross_entropy)
         return train_step
 
@@ -322,10 +325,21 @@ class BaseModel():
         # Defines the loss function [MSE = mean(square(target_value - regression))]
         mse = tf.reduce_mean(tf.square(self.model_target - regression))
 
-        # Defines the optimizer (ADAM) and the train step
-        optimizer = tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
+        # Defines the optimizer and the train step
+        optimizer = self._set_optimizer()
         train_step = optimizer.minimize(mse)
         return train_step
+
+    def _set_optimizer(self):
+        """ Returns a TF optimizer, given the model settings
+        """
+        if self.optimizer_type == "ADAM":
+            return tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
+        elif self.optimizer_type == "RADAM":
+            return RAdamOptimizer(learning_rate=self.learning_rate_var)
+        else:
+            raise ValueError("{} is not a supported optimizer type. Supported optimizer types: "
+                "ADAM, RADAM.".format(self.optimizer_type))
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: misc
