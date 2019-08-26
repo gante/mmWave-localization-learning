@@ -298,14 +298,12 @@ class BaseModel():
         if self.output_type == "regression":
             self.model_target = tf.compat.v1.placeholder(
                 tf.float32,
-                shape=[None] + self.output_shape,
-                name=self.output_name
+                shape=[None] + self.output_shape
             )
         elif self.output_type == "classification":
             self.model_target = tf.compat.v1.placeholder(
                 tf.int64,
-                shape=[None],
-                name=self.output_name
+                shape=[None]
             )
         else:
             raise ValueError("Unknown 'output_type' ({}). Only 'classification' and 'regression' "
@@ -380,13 +378,9 @@ class BaseModel():
     def _prepare_model_for_training(self):
         """ Self-documenting :D
         """
-        # Sets the saver
+        # Sets the saver and the session
         self.saver = tf.compat.v1.train.Saver()
-
-        # Sets the session
-        self.session = tf.compat.v1.Session(
-            config=tf.compat.v1.ConfigProto(gpu_options={"allow_growth": True})
-        )
+        self._set_session()
 
         # Initializes TF variables
         self.session.run(tf.compat.v1.global_variables_initializer())
@@ -409,3 +403,32 @@ class BaseModel():
             os.makedirs(self.model_folder)
         save_path = os.path.join(self.model_folder, model_name)
         self.saver.save(self.session, save_path)
+
+    def _load(self, model_name):
+        """ Default function to load a model
+
+        :param model_name: the name of the model
+        """
+        self._set_session()
+        loader_path = os.path.join(self.model_folder, model_name)
+        loader = tf.train.import_meta_graph(loader_path + '.meta')
+        loader.restore(self.session, loader_path)
+
+        # Redefines key model graph-related variables
+        # (e.g. placeholders and operations that were saved by name)
+        graph = tf.get_default_graph()
+        self.model_input = graph.get_tensor_by_name(self.input_name + ":0")
+        self.model_output = graph.get_tensor_by_name(self.output_name + ":0")
+        self.dropout_var = graph.get_tensor_by_name("dropout:0")
+
+    def _set_session(self):
+        """ Default function to set the session
+        """
+        self.session = tf.compat.v1.Session(
+            config=tf.compat.v1.ConfigProto(gpu_options={"allow_growth": True})
+        )
+
+    def _close_session(self):
+        """ Default function to close the session
+        """
+        self.session.close()

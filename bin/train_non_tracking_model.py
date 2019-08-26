@@ -2,7 +2,7 @@
 Runs a non-tracking experiment.
 
 The arguments are loaded from a .yaml file, which is the input argument of this scirpt
-(Instructions to run: `python run_non_tracking_experiment.py <path to .yaml file>`)
+(Instructions to run: `python train_non_tracking_model.py <path to .yaml file>`)
 """
 
 import os
@@ -16,7 +16,7 @@ from bff_positioning.models import CNN
 
 
 def main():
-    """Main block of code, which runs the experiment"""
+    """Main block of code, which runs the training"""
 
     logging.basicConfig(level="INFO")
 
@@ -31,7 +31,7 @@ def main():
     data_parameters = experiment_config['data_parameters']
     ml_parameters = experiment_config['ml_parameters']
 
-    # Loads the dataset
+    # Loads the raw dataset
     logging.info("Loading the dataset...")
     data_preprocessor = Preprocessor(data_parameters)
     features, labels = data_preprocessor.load_dataset()

@@ -100,10 +100,17 @@ class CNN(BaseModel):
         """
         self._save(model_name=model_name)
 
+    def load(self, model_name="cnn"):
+        """ Loads all model data from the specified folder, given the model name
+
+        :param model_name: the name of the model
+        """
+        self._load(model_name=model_name)
+
     def close(self):
         """ Cleans up the session and any left over data
         """
-        self.session.close()
+        self._close_session()
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: misc
