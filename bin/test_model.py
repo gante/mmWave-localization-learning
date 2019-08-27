@@ -37,8 +37,7 @@ def main():
 
     # Loads the raw dataset
     logging.info("Loading the dataset...")
-    data_preprocessor = Preprocessor(data_parameters)
-    features, labels = data_preprocessor.load_dataset()
+    features, labels = Preprocessor(data_parameters).load_dataset()
 
     # Undersamples the dataset (if requested)
     if "undersample_bf" in experiment_settings and experiment_settings["undersample_bf"]:
@@ -60,8 +59,8 @@ def main():
 
     # Prediction loop
     tests_per_position = experiment_settings["tests_per_position"]
-    y_true = np.asarray([])
-    y_pred = np.asarray([])
+    y_true = None
+    y_pred = None
     for set_idx in range(tests_per_position):
         logging.info("Creating test set %2s out of %2s...", set_idx+1, tests_per_position)
         features_test, labels_test = create_noisy_features(
@@ -72,8 +71,8 @@ def main():
         )
         logging.info("Running predictions and storing data...\n")
         predictions_test = model.predict(features_test)
-        y_true = np.vstack(y_true, labels_test)
-        y_pred = np.vstack(y_pred, predictions_test)
+        y_true = np.vstack((y_true, labels_test)) if y_true is not None else labels_test
+        y_pred = np.vstack((y_pred, predictions_test)) if y_pred is not None else predictions_test
         assert labels_test.shape[1] == y_true.shape[1], "The number of dimensions per sample "\
             "must stay constant!"
         assert y_true.shape == y_pred.shape, "The predictions and the labels must have the "\
@@ -89,12 +88,11 @@ def main():
         y_pred,
         rescale_factor=data_parameters["pos_grid"][0]
     )
-    logging.info("Average test distance: %.5f m || 95th percentile:  %.5f m\n",
+    logging.info("Average test distance: %.5f m || 95th percentile: %.5f m\n",
         test_score, test_95_perc)
     preditions_file = os.path.join(
         ml_parameters["model_folder"],
-        experiment_name,
-        experiment_settings["predictions_file"]
+        experiment_name + '_' + experiment_settings["predictions_file"]
     )
     with open(preditions_file, 'wb') as data_file:
         pickle.dump([y_true, y_pred], data_file)

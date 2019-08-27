@@ -388,12 +388,12 @@ class BaseModel():
         """
         self._set_session()
         loader_path = os.path.join(self.model_folder, model_name)
-        loader = tf.train.import_meta_graph(loader_path + '.meta')
+        loader = tf.compat.v1.train.import_meta_graph(loader_path + '.meta')
         loader.restore(self.session, loader_path)
 
         # Redefines key model graph-related variables
         # (e.g. placeholders and operations that were saved by name)
-        graph = tf.get_default_graph()
+        graph = tf.compat.v1.get_default_graph()
         self.model_input = graph.get_tensor_by_name(self.input_name + ":0")
         self.model_output = graph.get_tensor_by_name(self.output_name + ":0")
         self.dropout_var = graph.get_tensor_by_name("dropout:0")

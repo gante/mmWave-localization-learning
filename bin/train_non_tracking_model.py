@@ -85,7 +85,7 @@ def main():
             predictions_val,
             rescale_factor=data_parameters["pos_grid"][0]
         )
-        logging.info("Current avg val. distance: %.5f m || 95th percentile:  %.5f m\n",
+        logging.info("Current avg val. distance: %.5f m || 95th percentile: %.5f m\n",
             val_avg_dist, val_95_perc)
 
     # Store the trained model and cleans up

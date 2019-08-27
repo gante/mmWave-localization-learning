@@ -49,8 +49,9 @@ def plot_custom_cumulative_histogram(sorted_distances, n_bins):
     ax1.plot([0, distance_95], [0.95, 0.95], color='tab:orange', linestyle=':')
     ax1.plot([distance_95, distance_95], [0.0, 0.09], color='tab:orange', linestyle=':')
     ax1.plot([distance_95, distance_95], [0.19, 0.95], color='tab:orange', linestyle=':')
+    special_annotation = "$95^{th}$"    #<-- the "th" is superscript
     ax1.annotate(
-        "$95^{th}$ percentile:\n"+str(distance_95),
+        special_annotation + " percentile:{:.4f}\n".format(distance_95),
         xy=(distance_95+1, 0),
         xytext=(distance_95-10, 0.1),
         arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=.2"),
@@ -68,7 +69,7 @@ def plot_custom_cumulative_histogram(sorted_distances, n_bins):
     ax2.plot([0, distance_50], [0.50, 0.50], color='tab:orange', linestyle=':')
     ax2.plot([distance_50, distance_50], [0.0, 0.50], color='tab:orange', linestyle=':')
     ax2.annotate(
-        "Median:\n"+str(distance_50),
+        "Median:{:.4f}\n".format(distance_50),
         xy=(distance_50+0.1, 0),
         xytext=(distance_50+1, 0.15),
         arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=.2"),
@@ -99,8 +100,7 @@ def main():
     experiment_name = os.path.basename(sys.argv[1]).split('.')[0]
     preditions_file = os.path.join(
         ml_parameters["model_folder"],
-        experiment_name,
-        experiment_settings["predictions_file"]
+        experiment_name + '_' + experiment_settings["predictions_file"]
     )
     with open(preditions_file, 'rb') as pred_file:
         y_true, y_pred = pickle.load(pred_file)
@@ -111,7 +111,7 @@ def main():
     logging.info("Computing distances and the RMSE...")
     sorted_distances = np.sort(np.sqrt(np.sum(np.square(y_true - y_pred), 1))) * GRID_SIZE
     rmse = np.sqrt(np.mean(np.square(sorted_distances)))
-    logging.info("RMSE = %s\n", rmse)
+    logging.info("RMSE = %.4f\n", rmse)
 
     # Getting the cumulative histogram
     logging.info("Getting the cumulative histogram...")
