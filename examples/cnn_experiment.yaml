@@ -47,7 +47,7 @@ ml_parameters:
     model_folder: "../experiments_results/cnn/"
 
     # basic model hyperparams
-    optimizer_type: "ADAM"
+    optimizer_type: "NADAM"
     batch_size: 64
     batch_size_inference: 256
     dropout: 0.01
