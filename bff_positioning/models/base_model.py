@@ -337,8 +337,6 @@ class BaseModel():
         elif self.optimizer_type == "NADAM":
             return tf.contrib.opt.NadamOptimizer(learning_rate=self.learning_rate_var)
         elif self.optimizer_type == "RADAM":
-            #TODO: add total steps
-            logging.warning("RAdam needs warmup steps, to implement")
             return RAdamOptimizer(learning_rate=self.learning_rate_var)
         else:
             raise ValueError("{} is not a supported optimizer type. Supported optimizer types: "
