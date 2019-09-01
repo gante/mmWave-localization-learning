@@ -234,8 +234,8 @@ class Preprocessor():
             to_plot = np.full([int(self.pos_grid[0]) + 1, int(self.pos_grid[1]) + 1], 0.0)
             for pos_idx in tqdm(range(self.labels.shape[0])):
                 # Scales 0-1 to 0-N/M
-                pos_x = int(self.labels[pos_idx, 0] * self.pos_grid[0])
-                pos_y = int(self.labels[pos_idx, 1] * self.pos_grid[1])
+                pos_x = round(self.labels[pos_idx, 0] * self.pos_grid[0])
+                pos_y = round(self.labels[pos_idx, 1] * self.pos_grid[1])
                 # Flips Y (to correctly plot with imshow)
                 to_plot[pos_x, self.pos_grid[1] - pos_y] = 1.0
             # Local import to avoid messing non-gaphical interfaces
@@ -244,8 +244,7 @@ class Preprocessor():
             plt.imshow(np.transpose(to_plot))
             image_locaton = os.path.join(target_folder, 'existing_data_points.pdf')
             plt.savefig(image_locaton)
-            logging.info("Done! (Check %s - this image usually comes out with some weird lines, "
-                "but the data is fine, as you'll see in the following steps)", image_locaton)
+            logging.info("Done! (Check %s)", image_locaton)
 
     def load_dataset(self):
         """ Loads the previously stored dataset, returning it

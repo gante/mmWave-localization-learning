@@ -17,7 +17,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 
-GRID_SIZE = 400
+GRID_SIZE = 400.
 MAX_ERROR = 10
 PLOT_PATH = "error_map.pdf"
 
@@ -32,20 +32,22 @@ def plot_error_map(y_true, y_pred, max_error):
     distance_error = np.sqrt(np.sum(np.square(y_true - y_pred), 1))
 
     # Creates empty data structures
-    position_entries = {(x, y): [] for x in range(GRID_SIZE+1) for y in range(GRID_SIZE+1)}
-    position_error = np.full((GRID_SIZE+1, GRID_SIZE+1), 100)
+    position_entries = {
+        (x, y): [] for x in range(int(GRID_SIZE)+1) for y in range(int(GRID_SIZE)+1)
+    }
+    position_error = np.full((int(GRID_SIZE)+1, int(GRID_SIZE)+1), 100)
 
     # For each prediction: gets the true position -> stores the error
     logging.info("Sorting the predictions by position...")
     for idx in range(y_true.shape[0]):
-        x = int(y_true[idx, 0])
-        y = int(y_true[idx, 1])
+        x = round(y_true[idx, 0])
+        y = round(y_true[idx, 1])
         position_entries[(x, y)].append(distance_error[idx])
 
     # Gets each position's average   (if it has no entries, sets as default value)
     logging.info("Averaging the results by position...")
-    for x in range(GRID_SIZE+1):
-        for y in range(GRID_SIZE+1):
+    for x in range(int(GRID_SIZE)+1):
+        for y in range(int(GRID_SIZE)+1):
             if position_entries[(x, y)]:
                 position_error[x, y] = np.mean(position_entries[(x, y)])
 
@@ -105,6 +107,8 @@ def main():
         np.min(y_true[:, 0]), np.max(y_true[:, 0]), np.min(y_true[:, 1]), np.max(y_true[:, 1]))
     logging.info("Predictions range:  x=[%.2f, %.2f], y=[%.2f, %.2f]",
         np.min(y_pred[:, 0]), np.max(y_pred[:, 0]), np.min(y_pred[:, 1]), np.max(y_pred[:, 1]))
+    logging.info("Distinct ground truth values: x=%s, y=%s",
+        np.unique(y_true[:, 0]).shape[0], np.unique(y_true[:, 1]).shape[0])
 
     # Plots the error on the map
     plot_error_map(y_true, y_pred, MAX_ERROR)
