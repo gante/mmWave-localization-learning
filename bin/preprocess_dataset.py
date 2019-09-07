@@ -10,7 +10,7 @@ import time
 import logging
 import yaml
 
-from bff_positioning.data import Preprocessor
+from bff_positioning.data import Preprocessor, PathCreator
 
 def main():
     """Main block of code, which runs the data-preprocessing"""
@@ -24,10 +24,13 @@ def main():
         "E.g. `python preprocess_dataset.py <path to .yaml file>`"
     with open(sys.argv[1], "r") as yaml_config_file:
         logging.info("Loading simulation settings from %s", sys.argv[1])
-        experiment_config = yaml.load(yaml_config_file)
+        experiment_config = yaml.safe_load(yaml_config_file)
+    data_parameters = experiment_config['data_parameters']
+    path_parameters = experiment_config['path_parameters'] \
+        if 'path_parameters' in experiment_config else None
 
     # Checks if the dataset we are trying to create already exists
-    data_preprocessor = Preprocessor(experiment_config['data_parameters'])
+    data_preprocessor = Preprocessor(data_parameters)
     dataset_exists = data_preprocessor.check_existing_dataset()
 
     # If it doesn't, creates it
@@ -41,7 +44,20 @@ def main():
         data_preprocessor.store_dataset()
     else:
         logging.info("The dataset already exists in %s, skipping the dataset creation "
-            "steps!", experiment_config['data_parameters']['preprocessed_file'])
+            "steps!", data_parameters['preprocessed_file'])
+
+    # If the experiment specifies the `path_parameters` field (i.e. a tracking experiment),
+    # creates the paths. The overall flow is the same as above.
+    if path_parameters:
+        _, labels = data_preprocessor.load_dataset()
+        path_creator = PathCreator(data_parameters, path_parameters, labels)
+        paths_exist = path_creator.check_existing_paths()
+        if not paths_exist:
+            path_creator.create_paths()
+            path_creator.store_paths()
+        else:
+            logging.info("The paths already exist in %s, skipping their creation!",
+                data_parameters['paths_file'])
 
     # Prints elapsed time
     end = time.time()

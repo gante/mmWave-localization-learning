@@ -1,7 +1,6 @@
 """
-Contains a class that converts the pre-processed binary file into a numpy array.
-The logic behing each conversion step is thoroughly document through comments
-in the code.
+Contains a class that converts the pre-processed binary file into a numpy array. The logic behind
+each conversion step is thoroughly document through comments in the code.
 """
 
 import pickle
@@ -14,10 +13,10 @@ from tqdm import tqdm
 import matplotlib
 
 class Preprocessor():
-    """ Reads a pre-processed binary file (see the README) into a pretty numpy array,
-    which can be feed to a ML model.
+    """ Reads a pre-processed binary file (see README) into a pretty numpy array, which can be
+    feed to a ML model.
 
-    :param settings: a dictionary of simulation settings.
+    :param settings: a dictionary of data-related simulation settings
     """
     def __init__(self, settings):
         self.input_file = settings['input_file']
@@ -253,7 +252,7 @@ class Preprocessor():
         """
         assert self.check_existing_dataset(), "The dataset with the specified path ({}) either "\
             "does not exists or was built with different simulation settings. Please run the "\
-            "data preprocessing step with the the same simulation settings!".format(
+            "data preprocessing step with the new simulation settings!".format(
             self.preprocessed_file)
 
         with open(self.preprocessed_file, 'rb') as dataset_file:

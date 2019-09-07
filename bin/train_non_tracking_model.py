@@ -46,7 +46,7 @@ def main():
 
     # Initializes the model and prepares it for training
     logging.info("Initializing the model...")
-    if experiment_settings["model_type"] == "cnn":
+    if experiment_settings["model_type"].lower == "cnn":
         model = CNN(ml_parameters)
     else:
         raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "
