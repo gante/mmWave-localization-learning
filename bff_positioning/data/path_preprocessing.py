@@ -21,7 +21,6 @@ class PathCreator():
     :param labels: numpy 2D matrix, [sample_index, dimention]
     """
     def __init__(self, data_settings, path_settings, labels):
-        self.valid_positions = self._get_valid_positions(labels)
         self.paths_file = path_settings['paths_file']
 
         # Inputs that dictate the dataset ID:
@@ -47,6 +46,7 @@ class PathCreator():
 
         # Declares other variables
         self.paths_id = get_paths_id(data_settings, path_settings)
+        self.valid_positions = self._get_valid_positions(labels)
         self._paths = None
 
     def _get_valid_positions(self, labels):
@@ -65,6 +65,9 @@ class PathCreator():
             assert (this_x, this_y) not in valid_positions, "There can be no repeated entries"
             valid_positions[(this_x, this_y)] = idx
         logging.info("Number of valid positions: %s", len(valid_positions))
+        x = [position[0] for position in valid_positions]
+        y = [position[1] for position in valid_positions]
+        logging.info("Range of valid positions: x=%s-%s, y=%s-%s", min(x), max(x), min(y), max(y))
         return valid_positions
 
     def _get_static_paths(self, undersample):
@@ -99,8 +102,8 @@ class PathCreator():
         assert path_type in ('c', 'p'), "Invalid path type!"
         avg_speed = getattr(self, path_type + '_avg_speed')
         max_speed = getattr(self, path_type + '_max_speed')
-        max_speed_adjust = getattr(self, path_type + '_speed_adjust')
-        max_direction_adjust = (getattr(self, path_type + '_direction_adjust') / 360.0) * 2 * PI
+        acceleration = getattr(self, path_type + '_acceleration')
+        direction_change = (getattr(self, path_type + '_direction_change') / 360.0) * 2 * PI
         # Probability of [no change; full stop; direction adjust; speed adjust]
         move_probabilities = getattr(self, path_type + '_move_proba')
         assert np.isclose(np.sum(move_probabilities), 1.0), "The probabilities must sum to 1, "\
@@ -109,8 +112,11 @@ class PathCreator():
         number_paths = int(
             len(self.valid_positions) * self.moving_paths_multiplier * undersample
         )
-        max_x = max([x for position in self.valid_positions for x in position[0]])
-        max_y = max([y for position in self.valid_positions for y in position[1]])
+        x_values = [position[0] for position in self.valid_positions]
+        y_values = [position[1] for position in self.valid_positions]
+        x_range = [min(x_values), max(x_values)]
+        y_range = [min(y_values), max(y_values)]
+        del x_values, y_values
 
         moving_paths = []
         tqdm_str = "Computing {} paths...".format("pedestrian" if path_type == 'p' else "car")
@@ -146,15 +152,15 @@ class PathCreator():
                         this_speed_y = 0.0
                     # Direction adjust
                     elif movement_type == 2:
-                        direction_adjust = np.random.uniform(-max_direction_adjust,
-                            max_direction_adjust)
+                        direction_adjust = np.random.uniform(-direction_change,
+                            direction_change)
                         direction += direction_adjust
                         this_speed_x = curr_speed * np.cos(direction)
                         this_speed_y = curr_speed * np.sin(direction)
                     # Speed adjust
                     elif movement_type == 3:
-                        speed_adjust = np.random.uniform(-max_speed_adjust,
-                            max_speed_adjust)
+                        speed_adjust = np.random.uniform(-acceleration,
+                            acceleration)
                         curr_speed += speed_adjust
                         curr_speed = np.clip(curr_speed, 0.0, max_speed)
                         this_speed_x = avg_speed * np.cos(direction)
@@ -173,9 +179,9 @@ class PathCreator():
                     #-------------------------------------------------------------
                     # Checks if position is valid: if it is, stores it, otherwise restarts the path
                     x_index, y_index = round(this_x), round(this_y)
-                    if not 0 < x_index < max_x:
+                    if not x_range[0] < x_index < x_range[1]:
                         break
-                    elif not 0 < y_index < max_y:
+                    elif not y_range[0] < y_index < y_range[1]:
                         break
                     elif (x_index, y_index) not in self.valid_positions:
                         break
