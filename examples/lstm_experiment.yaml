@@ -45,7 +45,9 @@ path_parameters:
     #car probability of [no change; full stop; direction change; speed change] each second
     c_move_proba: [0.8, 0.02, 0.05, 0.13]
 
-    moving_paths_multiplier: 4.0   #Samples "N*number_of_static_paths" moving paths
+    moving_paths_multiplier: 4.0    # Samples "<this>*number_of_static_paths" pedestrian and car
+                                    # paths (so, a total of "2*<this>*number_of_static_paths")
+                                    # moving paths
 
 
 # -------------------------------------------------------------------------------------------------
@@ -57,8 +59,8 @@ experiment_settings:
     noise_std: 6                #in dB  [Gaussian noise applied over dB values -> "log-normal"]
     scaler_type: "binarizer"
     model_type: "lstm"
-    tests_per_position: 30
     predictions_file: "model_predictions"
+    train_sample_fraction: 0.05
 
 
 # -------------------------------------------------------------------------------------------------
@@ -66,28 +68,25 @@ experiment_settings:
 ml_parameters:
     # IO settings
     input_name: "input"
-    input_shape: [32, 81, 1]    # BF, usable timeslots, 1 "data channel"
+    input_shape: [7, 2592]    # time_steps, data samples per time step
     output_name: "location"
     output_type: "regression"
     output_shape: [2]
     validation_metric: "euclidean_distance"
-    model_folder: "../experiments_results/cnn/"
+    model_folder: "../experiments_results/lstm/"
 
     # basic model hyperparams
     optimizer_type: "NADAM"
     batch_size: 64
     batch_size_inference: 256
-    dropout: 0.01
+    dropout: 0.0
     max_epochs: 1000
     early_stopping: 50          # Stops training after these epochs without improvement on val set
-    fc_layers: 12
-    fc_neurons: 256
-    learning_rate: 0.0001
+    fc_layers: 3
+    fc_neurons: 512
+    learning_rate: 0.00005      # = 5e-5
     learning_rate_decay: 0.995  # Multiplicative term at the end of each epoch
     target_gpu: "0"
 
     # architecture specific hyperparams
-    conv_layers: 1
-    conv_filters: [8]
-    conv_filter_size: [[3, 3]]
-    conv_maxpool: [[2, 1]]
+    lstm_neurons: 512

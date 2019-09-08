@@ -204,3 +204,208 @@ def get_95th_percentile(y_true, y_pred, rescale_factor=1.):
     """
     array_of_distances = np.sqrt(np.sum(np.square(y_true - y_pred), 1))
     return np.percentile(array_of_distances, 95) * rescale_factor
+
+# -------------------------------------------------------------------------------------------------
+# Path-handling functions
+
+def _static_paths_sampler(
+    mask,
+    paths,
+    features,
+    time_steps,
+    experiment_settings,
+    data_parameters
+):
+    """ Helper function to `sample_paths` - samples static paths
+    Note - static paths format = {(x, y): index in the dataset}
+    """
+    X, y = [], []
+    for idx, (position_tuple, index_in_dataset) in enumerate(paths.items()):
+        if not mask[idx]:
+            continue
+        x_sequence = [features[index_in_dataset, :]]*time_steps
+        x_sequence = _apply_noise_and_scaler(
+            np.asarray(x_sequence),
+            experiment_settings,
+            data_parameters
+        )
+        if x_sequence is not None:
+            y.append(list(position_tuple))
+            X.append(x_sequence)
+    return X, y
+
+
+def _moving_paths_sampler(
+    mask,
+    paths,
+    features,
+    labels,
+    time_steps,
+    experiment_settings,
+    data_parameters
+):
+    """ Helper function to `sample_paths` - samples moving paths
+    Note - moving paths format = [[dataset index for pos_1, dataset index for pos_2, ...], [...]]
+    """
+    X, y = [], []
+    for idx, sequence_of_indexes in enumerate(paths):
+        if not mask[idx]:
+            continue
+        x_sequence = []
+        for dataset_index in sequence_of_indexes:
+            x_sequence.append(features[int(round(dataset_index)), :])
+        assert len(x_sequence) == time_steps, "The length of the obtained sequence ({}) does "\
+            "not match the expected length ({})".format(len(x_sequence), time_steps)
+        x_sequence = _apply_noise_and_scaler(
+            np.asarray(x_sequence),
+            experiment_settings,
+            data_parameters
+        )
+        if x_sequence is not None:
+            y.append(labels[sequence_of_indexes[-1], :])
+            X.append(x_sequence)
+    return X, y
+
+
+def _apply_noise_and_scaler(
+    sequence,
+    experiment_settings,
+    data_parameters
+):
+    """ Helper function to `sample_paths` - applies the noise and the scaler over a sequence
+    of features
+    """
+
+    scaled_noise, scaled_cutoff = _convert_power_variables(
+        experiment_settings,
+        data_parameters
+    )
+    scaler = _get_scaler(experiment_settings["scaler_type"])
+
+    noise = np.random.normal(scale=scaled_noise, size=sequence.shape)
+    noisy_sequence = sequence + noise
+    noisy_sequence[noisy_sequence < scaled_cutoff] = 0
+
+    # Checks if the sequence contains any empty sample (sample containing only 0).
+    # If it does, discards the sequence, as it is a broken sequence.
+    this_sample_sums = np.sum(noisy_sequence, axis=1)
+    this_sample_sums[this_sample_sums > 0.001] = 1
+    if np.sum(this_sample_sums) < len(sequence):
+        return None
+
+    #Applies the scaler
+    if scaler is not None:
+        noisy_sequence = scaler.fit_transform(noisy_sequence)
+        if experiment_settings["scaler_type"] == "binarizer":
+            noisy_sequence = noisy_sequence.astype(bool)
+    return noisy_sequence
+
+
+def sample_paths(
+    paths,
+    features,
+    labels,
+    experiment_settings,
+    data_parameters,
+    path_parameters,
+    sample_fraction=1.
+):
+    """
+    Given the input arguments (see description below), returns:
+        1 - X, the noisy sequence input data (sequences with the predefined length)
+        2 - y, the labels (one label per sequence)
+        3 - a dict with the ending index for that path type (used at test time)
+
+    Having RAM problems? Use the "sample_fraction" option in `path_parameters` and train for
+    more "epochs" (in this case, epochs is not the most adequate word :D) The function will use
+    ~sample_fraction times the original dataset per "epoch", were 0 <= sample_fraction < 1
+
+    :param paths: paths created in the preprocessing step. The paths will be used with `features`
+        to create the actual dataset
+    :param features: numpy 2D matrix, [sample_index, feature_index]
+    :param labels: numpy 2D matrix, [sample_index, dimention]
+    :param experiment_settings: experiment-related settings
+    :param data_parameters: raw data-related settings
+    :param path_parameters: path-related settings
+    :param sample_fraction: floating point between 0 and 1, indicating the fraction of paths to be
+        sampled
+    :returns: see the list above
+    """
+    # Unpacks a few arguments
+    time_steps = path_parameters["time_steps"]
+
+    X = []
+    y = []
+    paths_type_delimiter = {'s': 0, 'p': 0, 'c': 0}
+    assert 0. <= sample_fraction <= 1., "sample_fraction should be between 0.0 and 1.0!"
+    assert labels.shape[0] == features.shape[0], "The features and the labels must have the same "\
+        "input length!"
+
+    # Sample static paths
+    if paths['s']:
+        # Creates a probabilistic mask (skip paths with probability 1-sample_fraction)
+        mask = np.random.uniform(size=len(paths['s']))
+        mask[mask < sample_fraction] = 1.0
+        mask[mask < 1.0] = 0.0
+
+        # For each position, samples a sequence with size=time_steps.
+        x_static, y_static = _static_paths_sampler(
+            mask,
+            paths['s'],
+            features,
+            time_steps,
+            experiment_settings,
+            data_parameters
+        )
+        for x_sample, y_sample in zip(x_static, y_static):
+            X.extend(x_sample)
+            y.extend(y_sample)
+        paths_type_delimiter['s'] = len(X)
+        paths_type_delimiter['p'] = len(X)
+        paths_type_delimiter['c'] = len(X)
+        del x_static, y_static
+
+    # Sample pedestrian paths
+    if paths['p']:
+        mask = np.random.uniform(size=len(paths['p']))
+        mask[mask < sample_fraction] = 1.0
+        mask[mask < 1.0] = 0.0
+
+        x_ped, y_ped = _moving_paths_sampler(
+            mask,
+            paths['s'],
+            features,
+            labels,
+            time_steps,
+            experiment_settings,
+            data_parameters
+        )
+        for x_sample, y_sample in zip(x_ped, y_ped):
+            X.extend(x_sample)
+            y.extend(y_sample)
+        paths_type_delimiter['p'] = len(X)
+        paths_type_delimiter['c'] = len(X)
+        del x_ped, y_ped
+
+    # Sample car paths
+    if paths['c']:
+        mask = np.random.uniform(size=len(paths['c']))
+        mask[mask < sample_fraction] = 1.0
+        mask[mask < 1.0] = 0.0
+
+        x_car, y_car = _moving_paths_sampler(
+            mask,
+            paths['s'],
+            features,
+            labels,
+            time_steps,
+            experiment_settings,
+            data_parameters
+        )
+        for x_sample, y_sample in zip(x_car, y_car):
+            X.extend(x_sample)
+            y.extend(y_sample)
+        paths_type_delimiter['c'] = len(X)
+        del x_car, y_car
+
+    return X, y, paths_type_delimiter

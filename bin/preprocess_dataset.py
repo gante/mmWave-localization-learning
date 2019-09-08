@@ -1,5 +1,5 @@
 """
-Preprocesses the dataset.
+Preprocesses the dataset, preparing all data for training.
 
 The arguments are loaded from a .yaml file, which is the input argument of this scirpt
 (Instructions to run: `python preprocess_dataset.py <path to .yaml file>`)

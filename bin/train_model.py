@@ -1,8 +1,8 @@
 """
-Runs a non-tracking experiment.
+Trains a model, acording to the experiment file input
 
 The arguments are loaded from a .yaml file, which is the input argument of this scirpt
-(Instructions to run: `python train_non_tracking_model.py <path to .yaml file>`)
+(Instructions to run: `python train_model.py <path to .yaml file>`)
 """
 
 import os
@@ -11,9 +11,9 @@ import time
 import logging
 import yaml
 
-from bff_positioning.data import Preprocessor, create_noisy_features, undersample_bf,\
-    undersample_space, get_95th_percentile
-from bff_positioning.models import CNN
+from bff_positioning.data import Preprocessor, PathCreator, create_noisy_features, undersample_bf,\
+    undersample_space, get_95th_percentile, sample_paths
+from bff_positioning.models import CNN, LSTM
 
 
 def main():
@@ -32,49 +32,81 @@ def main():
     experiment_settings = experiment_config['experiment_settings']
     data_parameters = experiment_config['data_parameters']
     ml_parameters = experiment_config['ml_parameters']
+    path_parameters = experiment_config['path_parameters'] \
+        if 'path_parameters' in experiment_config else None
 
     # Loads the raw dataset
     logging.info("Loading the dataset...")
     data_preprocessor = Preprocessor(data_parameters)
     features, labels = data_preprocessor.load_dataset()
+    if path_parameters:
+        path_creator = PathCreator(data_parameters, path_parameters, labels)
+        paths = path_creator.load_paths()
 
     # Undersamples the dataset (if requested)
     if "undersample_bf" in experiment_settings and experiment_settings["undersample_bf"]:
         features = undersample_bf(features, data_parameters["beamformings"])
     if "undersample_space" in experiment_settings:
+        assert not path_parameters, "This option is not supported for tracking experiments, "\
+            "unless the code for the path creation is updated"
         features, labels = undersample_space(features, labels, data_parameters["undersample_space"])
 
     # Initializes the model and prepares it for training
-    logging.info("Initializing the model...")
-    if experiment_settings["model_type"].lower == "cnn":
+    logging.info("Initializing the model (type = %s)...", experiment_settings["model_type"].lower())
+    if experiment_settings["model_type"].lower() == "cnn":
         model = CNN(ml_parameters)
+    elif experiment_settings["model_type"].lower() == "lstm":
+        assert path_parameters, "This model requires `paths_parameters`. See the example."
+        assert path_parameters["time_steps"] == ml_parameters["input_shape"][0], "The ML model "\
+            "first input dimention must match the length of the paths! (path length = {}, model)"\
+            "input = {})".format(path_parameters["time_steps"], ml_parameters["input_shape"][0])
+        model = LSTM(ml_parameters)
     else:
         raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "
-            "'cnn' is supported. [If you were looking for the HCNNs: sorry, the code was quite "
-            "lengthy, so I moved its refactoring into a future to do. Please contact me if you "
-            "want to experiment with it.]".format(experiment_settings["model_type"]))
+            "'cnn', 'lstm', and 'tcn' are supported.".format(experiment_settings["model_type"]))
     model.set_graph()
 
     # Creates the validation set
     logging.info("Creating validation set...")
-    features_val, labels_val = create_noisy_features(
-        features,
-        labels,
-        experiment_settings,
-        data_parameters,
-    )
+    if path_parameters:
+        features_val, labels_val, _ = sample_paths(
+            paths["validation"],
+            features,
+            labels,
+            experiment_settings,
+            data_parameters,
+            path_parameters,
+        )
+    else:
+        features_val, labels_val = create_noisy_features(
+            features,
+            labels,
+            experiment_settings,
+            data_parameters,
+        )
 
     # Runs the training loop
     logging.info("\nStaring the training loop!\n")
     keep_training = True
     while keep_training:
         logging.info("Creating noisy set for this epoch...")
-        features_train, labels_train = create_noisy_features(
-            features,
-            labels,
-            experiment_settings,
-            data_parameters,
-        )
+        if path_parameters:
+            features_train, labels_train, _ = sample_paths(
+                paths["train"],
+                features,
+                labels,
+                experiment_settings,
+                data_parameters,
+                path_parameters,
+                sample_fraction=experiment_settings["train_sample_fraction"]
+            )
+        else:
+            features_train, labels_train = create_noisy_features(
+                features,
+                labels,
+                experiment_settings,
+                data_parameters,
+            )
         model.train_epoch(features_train, labels_train)
         predictions_val = model.predict(features_val)
         keep_training, val_avg_dist = model.epoch_end(labels_val, predictions_val)

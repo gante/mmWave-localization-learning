@@ -264,7 +264,7 @@ class BaseModel():
         """
         # The current learning rate
         self.learning_rate_var = tf.compat.v1.placeholder(tf.float32, shape=[])
-        # (1 - Dropout) probability
+        # Dropout probability
         self.dropout_var = tf.compat.v1.placeholder(tf.float32, name='dropout')
 
         self.model_input = tf.compat.v1.placeholder(
