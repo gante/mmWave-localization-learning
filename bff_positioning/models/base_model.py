@@ -72,6 +72,8 @@ class BaseModel():
         self.batch_size_inference = model_settings["batch_size_inference"]
         self.dropout = model_settings["dropout"]
         self.early_stopping = model_settings["early_stopping"]
+        self.val_eval_period = model_settings["val_eval_period"] \
+            if "val_eval_period" in model_settings else 1
         self.max_epochs = model_settings["max_epochs"]
         self.fc_layers = model_settings["fc_layers"]
         self.fc_neurons = model_settings["fc_neurons"]
@@ -127,7 +129,7 @@ class BaseModel():
             "The model sub-class did not implement a 'epoch_end()' function."
         )
 
-    def predict(self, X):
+    def predict(self, X, validation):
         """Prototype: predict(self, X)
 
         Returns the preditions on the given data
@@ -172,6 +174,7 @@ class BaseModel():
         :param Y: numpy array with the labels
         """
         assert X.shape[0] == Y.shape[0], "X and Y have a different number of samples!"
+        self.current_epoch += 1
         max_batches = int(np.ceil(X.shape[0] / self.batch_size))
         X, Y = shuffle(X, Y)
         train_string = "Training on epoch: {:4} || LR: {:3.2E} ||"
@@ -190,7 +193,6 @@ class BaseModel():
                     self.learning_rate_var: self.current_learning_rate,
                 },
                 session=self.session)
-        self.current_epoch += 1
 
     def _epoch_end(self, y_true=None, y_pred=None):
         """ Default end of epoch routine - Performs end of epoch operations, such as decaying the
@@ -215,13 +217,15 @@ class BaseModel():
                     keep_training = self._eval_early_stopping(val_score)
         return keep_training, val_score
 
-    def _predict(self, X):
+    def _predict(self, X, validation):
         """ Returns the predictions on the given data
 
         :param X: numpy array with the features
-        :param use_last_batch: boolean indicating whether the last batch should be used
+        :param validation: boolean indicating whether these predictions have validation purposes
         :return: an numpy array with the predictions
         """
+        if validation and self.current_epoch % self.val_eval_period != 0:
+            return None
         max_batches = int(np.ceil(X.shape[0] / self.batch_size))
         predictions = []
         for batch_idx in range(max_batches):
@@ -252,7 +256,7 @@ class BaseModel():
             self.current_validation_score = validation_score
             self.epochs_not_improving = 0
         else:
-            self.epochs_not_improving += 1
+            self.epochs_not_improving += self.val_eval_period
         if self.epochs_not_improving >= self.early_stopping:
             logging.info("Early stopping - the model does not improve for %s epochs",
                 self.epochs_not_improving)
@@ -425,7 +429,7 @@ class BaseModel():
 
 
 def score_predictions(y_true, y_pred, score_type):
-    """ Scores the model predictions agains the ground truth, given the score type
+    """ Scores the model predictions against the ground truth, given the score type
 
     :param y_true: ground truth
     :param y_pred: model predictions

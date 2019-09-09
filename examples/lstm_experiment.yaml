@@ -82,6 +82,7 @@ ml_parameters:
     dropout: 0.0
     max_epochs: 1000
     early_stopping: 50          # Stops training after these epochs without improvement on val set
+    val_eval_period: 5          # Periodicity of validation score (and early stopping eval)
     fc_layers: 3
     fc_neurons: 512
     learning_rate: 0.00005      # = 5e-5

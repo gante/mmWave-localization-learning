@@ -69,13 +69,14 @@ class LSTM(BaseModel):
         keep_training, val_score = self._epoch_end(X, Y)
         return keep_training, val_score
 
-    def predict(self, X):
+    def predict(self, X, validation=False):
         """ Returns the predictions on the given data
 
         :param X: numpy array with the features
+        :param validation: boolean indicating whether these predictions have validation purposes
         :return: an numpy array with the predictions
         """
-        return self._predict(X)
+        return self._predict(X, validation=validation)
 
     def save(self, model_name="lstm"):
         """ Stores all model data inside the specified folder, given the model name

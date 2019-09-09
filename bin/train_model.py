@@ -110,7 +110,7 @@ def main():
                 data_parameters,
             )
         model.train_epoch(features_train, labels_train)
-        predictions_val = model.predict(features_val)
+        predictions_val = model.predict(features_val, validation=True)
         keep_training, val_avg_dist = model.epoch_end(labels_val, predictions_val)
         # Upscales the validation score back to the original scale and gets the 95th percentile
         val_avg_dist *= data_parameters["pos_grid"][0]
