@@ -54,12 +54,14 @@ def main():
     # Initializes the model and prepares it for training
     logging.info("Initializing the model (type = %s)...", experiment_settings["model_type"].lower())
     if experiment_settings["model_type"].lower() == "cnn":
+        ml_parameters["input_type"] = "float"
         model = CNN(ml_parameters)
     elif experiment_settings["model_type"].lower() == "lstm":
         assert path_parameters, "This model requires `paths_parameters`. See the example."
         assert path_parameters["time_steps"] == ml_parameters["input_shape"][0], "The ML model "\
             "first input dimention must match the length of the paths! (path length = {}, model)"\
             "input = {})".format(path_parameters["time_steps"], ml_parameters["input_shape"][0])
+        ml_parameters["input_type"] = "bool"
         model = LSTM(ml_parameters)
     else:
         raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "

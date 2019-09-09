@@ -76,9 +76,9 @@ ml_parameters:
     model_folder: "../experiments_results/lstm/"
 
     # basic model hyperparams
-    optimizer_type: "NADAM"
+    optimizer_type: "ADAM"
     batch_size: 64
-    batch_size_inference: 256
+    batch_size_inference: 64
     dropout: 0.0
     max_epochs: 1000
     early_stopping: 50          # Stops training after these epochs without improvement on val set

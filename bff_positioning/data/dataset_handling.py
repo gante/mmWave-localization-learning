@@ -202,7 +202,8 @@ def get_95th_percentile(y_true, y_pred, rescale_factor=1.):
     :param y_true: ground truth
     :param y_pred: model predictions
     """
-    array_of_distances = np.sqrt(np.sum(np.square(y_true - y_pred), 1))
+    len_pred = y_pred.shape[0]
+    array_of_distances = np.sqrt(np.sum(np.square(y_true[:len_pred, :] - y_pred), 1))
     return np.percentile(array_of_distances, 95) * rescale_factor
 
 # -------------------------------------------------------------------------------------------------
@@ -212,6 +213,7 @@ def _static_paths_sampler(
     mask,
     paths,
     features,
+    labels,
     time_steps,
     experiment_settings,
     data_parameters
@@ -220,7 +222,7 @@ def _static_paths_sampler(
     Note - static paths format = {(x, y): index in the dataset}
     """
     X, y = [], []
-    for idx, (position_tuple, index_in_dataset) in enumerate(paths.items()):
+    for idx, index_in_dataset in enumerate(paths.values()):
         if not mask[idx]:
             continue
         x_sequence = [features[index_in_dataset, :]]*time_steps
@@ -230,9 +232,9 @@ def _static_paths_sampler(
             data_parameters
         )
         if x_sequence is not None:
-            y.append(list(position_tuple))
+            y.append(labels[index_in_dataset, :])
             X.append(x_sequence)
-    return X, y
+    return np.asarray(X), np.asarray(y)
 
 
 def _moving_paths_sampler(
@@ -253,7 +255,7 @@ def _moving_paths_sampler(
             continue
         x_sequence = []
         for dataset_index in sequence_of_indexes:
-            x_sequence.append(features[int(round(dataset_index)), :])
+            x_sequence.append(features[dataset_index, :])
         assert len(x_sequence) == time_steps, "The length of the obtained sequence ({}) does "\
             "not match the expected length ({})".format(len(x_sequence), time_steps)
         x_sequence = _apply_noise_and_scaler(
@@ -264,7 +266,7 @@ def _moving_paths_sampler(
         if x_sequence is not None:
             y.append(labels[sequence_of_indexes[-1], :])
             X.append(x_sequence)
-    return X, y
+    return np.asarray(X), np.asarray(y)
 
 
 def _apply_noise_and_scaler(
@@ -334,8 +336,8 @@ def sample_paths(
     # Unpacks a few arguments
     time_steps = path_parameters["time_steps"]
 
-    X = []
-    y = []
+    X = None
+    y = None
     paths_type_delimiter = {'s': 0, 'p': 0, 'c': 0}
     assert 0. <= sample_fraction <= 1., "sample_fraction should be between 0.0 and 1.0!"
     assert labels.shape[0] == features.shape[0], "The features and the labels must have the same "\
@@ -353,13 +355,14 @@ def sample_paths(
             mask,
             paths['s'],
             features,
+            labels,
             time_steps,
             experiment_settings,
             data_parameters
         )
-        for x_sample, y_sample in zip(x_static, y_static):
-            X.extend(x_sample)
-            y.extend(y_sample)
+        if X is None:
+            X = x_static
+            y = y_static
         paths_type_delimiter['s'] = len(X)
         paths_type_delimiter['p'] = len(X)
         paths_type_delimiter['c'] = len(X)
@@ -373,16 +376,19 @@ def sample_paths(
 
         x_ped, y_ped = _moving_paths_sampler(
             mask,
-            paths['s'],
+            paths['p'],
             features,
             labels,
             time_steps,
             experiment_settings,
             data_parameters
         )
-        for x_sample, y_sample in zip(x_ped, y_ped):
-            X.extend(x_sample)
-            y.extend(y_sample)
+        if X is None:
+            X = x_ped
+            y = y_ped
+        else:
+            X = np.append(X, x_ped, axis=0)
+            y = np.append(y, y_ped, axis=0)
         paths_type_delimiter['p'] = len(X)
         paths_type_delimiter['c'] = len(X)
         del x_ped, y_ped
@@ -395,17 +401,20 @@ def sample_paths(
 
         x_car, y_car = _moving_paths_sampler(
             mask,
-            paths['s'],
+            paths['c'],
             features,
             labels,
             time_steps,
             experiment_settings,
             data_parameters
         )
-        for x_sample, y_sample in zip(x_car, y_car):
-            X.extend(x_sample)
-            y.extend(y_sample)
+        if X is None:
+            X = x_car
+            y = y_car
+        else:
+            X = np.append(X, x_car, axis=0)
+            y = np.append(y, y_car, axis=0)
         paths_type_delimiter['c'] = len(X)
         del x_car, y_car
 
-    return X, y, paths_type_delimiter
+    return np.asarray(X), np.asarray(y), paths_type_delimiter

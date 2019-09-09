@@ -4,7 +4,7 @@
 import tensorflow as tf
 
 from .base_model import BaseModel
-from .layer_functions import add_conv_layer, add_fc_layer
+from .layer_functions import add_fc_layer
 
 
 class LSTM(BaseModel):
@@ -29,14 +29,16 @@ class LSTM(BaseModel):
         self._set_graph_io()
 
         # Adds the LSTM cell
-        lstm_layer = tf.keras.layers.LSTM(self.lstm_neurons)
-        lstm_output = lstm_layer(self.model_input)
+        lstm_cell = tf.nn.rnn_cell.LSTMCell(self.lstm_neurons)
+        initial_state = lstm_cell.zero_state(self.batch_size, dtype=tf.float32)
+        lstm_output, _ = tf.nn.dynamic_rnn(lstm_cell, self.model_input, initial_state=initial_state)
+        fcn_input = lstm_output[:, -1, :]
 
         # Adds fully connected layers
         fcn_output = None
         for _ in range(self.fc_layers):
             fcn_output = add_fc_layer(
-                fcn_output if fcn_output is not None else lstm_output,
+                fcn_output if fcn_output is not None else fcn_input,
                 self.fc_neurons,
                 self.dropout_var
             )
@@ -57,7 +59,7 @@ class LSTM(BaseModel):
         :param X: numpy array with the features
         :param Y: numpy array with the labels
         """
-        self._train_epoch(X, Y)
+        self._train_epoch(X, Y, use_last_batch=False)
 
     def epoch_end(self, X=None, Y=None):
         """ Performs end of epoch operations, such as decaying the learning rate. Some
@@ -75,7 +77,7 @@ class LSTM(BaseModel):
         :param X: numpy array with the features
         :return: an numpy array with the predictions
         """
-        return self._predict(X)
+        return self._predict(X, use_last_batch=False)
 
     def save(self, model_name="lstm"):
         """ Stores all model data inside the specified folder, given the model name

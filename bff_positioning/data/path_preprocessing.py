@@ -67,7 +67,8 @@ class PathCreator():
         logging.info("Number of valid positions: %s", len(valid_positions))
         x = [position[0] for position in valid_positions]
         y = [position[1] for position in valid_positions]
-        logging.info("Range of valid positions: x=%s-%s, y=%s-%s", min(x), max(x), min(y), max(y))
+        logging.info("Range of valid positions after upscaling: x=%s-%s, y=%s-%s",
+            min(x), max(x), min(y), max(y))
         return valid_positions
 
     def _get_static_paths(self, undersample):

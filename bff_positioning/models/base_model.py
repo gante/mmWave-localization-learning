@@ -63,6 +63,7 @@ class BaseModel():
         self.model_folder = model_settings["model_folder"]
         self.input_name = model_settings["input_name"]
         self.input_shape = model_settings["input_shape"]
+        self.input_type = model_settings["input_type"]
         self.output_name = model_settings["output_name"]
         self.output_type = model_settings["output_type"]
         self.output_shape = model_settings["output_shape"]
@@ -164,14 +165,18 @@ class BaseModel():
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: model training
-    def _train_epoch(self, X, Y):
+    def _train_epoch(self, X, Y, use_last_batch=True):
         """Default training routine - trains the model for an epoch
 
         :param X: numpy array with the features
         :param Y: numpy array with the labels
+        :param use_last_batch: boolean indicating whether the last batch should be used
         """
         assert X.shape[0] == Y.shape[0], "X and Y have a different number of samples!"
-        max_batches = int(np.ceil(X.shape[0] / self.batch_size))
+        if use_last_batch:
+            max_batches = int(np.ceil(X.shape[0] / self.batch_size))
+        else:
+            max_batches = int(np.floor(X.shape[0] / self.batch_size))
         X, Y = shuffle(X, Y)
         train_string = "Training on epoch: {:4} || LR: {:3.2E} ||"
 
@@ -207,19 +212,24 @@ class BaseModel():
             # Decays LR
             self.current_learning_rate *= self.learning_rate_decay
             if y_true is not None and y_pred is not None:
-                val_score = score_predictions(y_true, y_pred, self.validation_metric)
+                len_pred = y_pred.shape[0]
+                val_score = score_predictions(y_true[:len_pred, :], y_pred, self.validation_metric)
                 if self.early_stopping:
                     # Evaluates early stopping, if requested
                     keep_training = self._eval_early_stopping(val_score)
         return keep_training, val_score
 
-    def _predict(self, X):
+    def _predict(self, X, use_last_batch=True):
         """ Returns the predictions on the given data
 
         :param X: numpy array with the features
+        :param use_last_batch: boolean indicating whether the last batch should be used
         :return: an numpy array with the predictions
         """
-        max_batches = int(np.ceil(X.shape[0] / self.batch_size_inference))
+        if use_last_batch:
+            max_batches = int(np.ceil(X.shape[0] / self.batch_size))
+        else:
+            max_batches = int(np.floor(X.shape[0] / self.batch_size))
         predictions = []
         for batch_idx in range(max_batches):
             start_batch = batch_idx * self.batch_size_inference
@@ -267,11 +277,20 @@ class BaseModel():
         # Dropout probability
         self.dropout_var = tf.compat.v1.placeholder(tf.float32, name='dropout')
 
-        self.model_input = tf.compat.v1.placeholder(
-            tf.float32,
-            shape=[None] + self.input_shape,
-            name=self.input_name,
-        )
+        if self.input_type == "float":
+            self.model_input = tf.compat.v1.placeholder(
+                tf.float32,
+                shape=[None] + self.input_shape,
+                name=self.input_name,
+            )
+        elif self.input_type == "bool":
+            original_input = tf.compat.v1.placeholder(
+                tf.bool,
+                shape=[None] + self.input_shape,
+                name=self.input_name,
+            )
+            self.model_input = tf.cast(original_input, tf.float32)
+
         if self.output_type == "regression":
             self.model_target = tf.compat.v1.placeholder(
                 tf.float32,
