@@ -112,7 +112,7 @@ def main():
         model.train_epoch(features_train, labels_train)
         predictions_val = model.predict(features_val, validation=True)
         keep_training, val_avg_dist = model.epoch_end(labels_val, predictions_val)
-        if predictions_val:
+        if predictions_val is not None:
             # Upscales the validation score back to the original scale and gets the 95th percentile
             val_avg_dist *= data_parameters["pos_grid"][0]
             val_95_perc = get_95th_percentile(

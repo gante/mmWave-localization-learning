@@ -13,9 +13,9 @@ import pickle
 import yaml
 import numpy as np
 
-from bff_positioning.data import Preprocessor, create_noisy_features, get_95th_percentile,\
-    undersample_bf, undersample_space
-from bff_positioning.models import CNN, score_predictions
+from bff_positioning.data import Preprocessor, PathCreator, create_noisy_features, \
+    get_95th_percentile, undersample_bf, undersample_space, sample_paths
+from bff_positioning.models import CNN, LSTM, score_predictions
 
 
 def main():
@@ -34,41 +34,72 @@ def main():
     experiment_settings = experiment_config['experiment_settings']
     data_parameters = experiment_config['data_parameters']
     ml_parameters = experiment_config['ml_parameters']
+    path_parameters = experiment_config['path_parameters'] \
+        if 'path_parameters' in experiment_config else None
 
     # Loads the raw dataset
     logging.info("Loading the dataset...")
-    features, labels = Preprocessor(data_parameters).load_dataset()
+    data_preprocessor = Preprocessor(data_parameters)
+    features, labels = data_preprocessor.load_dataset()
+    if path_parameters:
+        path_creator = PathCreator(data_parameters, path_parameters, labels)
+        paths = path_creator.load_paths()
 
     # Undersamples the dataset (if requested)
     if "undersample_bf" in experiment_settings and experiment_settings["undersample_bf"]:
         features = undersample_bf(features, data_parameters["beamformings"])
     if "undersample_space" in experiment_settings:
+        assert not path_parameters, "This option is not supported for tracking experiments, "\
+            "unless the code for the path creation is updated"
         features, labels = undersample_space(features, labels, data_parameters["undersample_space"])
 
-    # Initializes the model and loads it
-    logging.info("Initializing the model...")
-    if experiment_settings["model_type"] == "cnn":
+    # Initializes the model and prepares it for training
+    logging.info("Initializing the model (type = %s)...", experiment_settings["model_type"].lower())
+    if experiment_settings["model_type"].lower() == "cnn":
+        ml_parameters["input_type"] = "float"
         model = CNN(ml_parameters)
+    elif experiment_settings["model_type"].lower() == "lstm":
+        assert path_parameters, "This model requires `paths_parameters`. See the example."
+        assert path_parameters["time_steps"] == ml_parameters["input_shape"][0], "The ML model "\
+            "first input dimention must match the length of the paths! (path length = {}, model)"\
+            "input = {})".format(path_parameters["time_steps"], ml_parameters["input_shape"][0])
+        ml_parameters["input_type"] = "bool"
+        model = LSTM(ml_parameters)
     else:
         raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "
-            "'cnn' is supported. [If you were looking for the HCNNs: sorry, the code was quite "
-            "lengthy, so I moved its refactoring into a future to do. Please contact me if you "
-            "want to experiment with it.]".format(experiment_settings["model_type"]))
+            "'cnn', 'lstm', and 'tcn' are supported.".format(experiment_settings["model_type"]))
     experiment_name = os.path.basename(sys.argv[1]).split('.')[0]
     model.load(model_name=experiment_name)
 
     # Prediction loop
-    tests_per_position = experiment_settings["tests_per_position"]
+    if "tests_per_position" in experiment_settings:
+        tests_per_input = experiment_settings["tests_per_position"]
+    else:
+        tests_per_input = experiment_settings["tests_per_path"] * 10
+        logging.info("Note - each set of paths will be split into 10 sub-sets, for easier RAM"
+            "management -- that's why you'll see 10x test sets in the next logging messages.")
+
     y_true = None
     y_pred = None
-    for set_idx in range(tests_per_position):
-        logging.info("Creating test set %2s out of %2s...", set_idx+1, tests_per_position)
-        features_test, labels_test = create_noisy_features(
-            features,
-            labels,
-            experiment_settings,
-            data_parameters,
-        )
+    for set_idx in range(tests_per_input):
+        logging.info("Creating test set %2s out of %2s...", set_idx+1, tests_per_input)
+        if path_parameters:
+            features_test, labels_test, _ = sample_paths(
+                paths["test"],
+                features,
+                labels,
+                experiment_settings,
+                data_parameters,
+                path_parameters,
+                sample_fraction=0.1
+            )
+        else:
+            features_test, labels_test = create_noisy_features(
+                features,
+                labels,
+                experiment_settings,
+                data_parameters,
+            )
         logging.info("Running predictions and storing data...\n")
         predictions_test = model.predict(features_test)
         y_true = np.vstack((y_true, labels_test)) if y_true is not None else labels_test

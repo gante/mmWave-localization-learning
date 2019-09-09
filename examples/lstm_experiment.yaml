@@ -53,14 +53,15 @@ path_parameters:
 # -------------------------------------------------------------------------------------------------
 # *** Settings for overall experiment control ***
 experiment_settings:
-    detection_threshold: -100   #in dBm  [depends on the sample fequency, thermal noise]
-    tx_power: 45                #in dBm
-    rx_gain: 10                 #in dBi
-    noise_std: 6                #in dB  [Gaussian noise applied over dB values -> "log-normal"]
+    detection_threshold: -100   # in dBm  [depends on the sample fequency, thermal noise]
+    tx_power: 45                # in dBm
+    rx_gain: 10                 # in dBi
+    noise_std: 6                # in dB  [Gaussian noise applied over dB values -> "log-normal"]
     scaler_type: "binarizer"
     model_type: "lstm"
     predictions_file: "model_predictions"
-    train_sample_fraction: 0.05
+    tests_per_path: 5
+    train_sample_fraction: 0.05 # will use this fraction of the train set each "epoch" (check code)
 
 
 # -------------------------------------------------------------------------------------------------
