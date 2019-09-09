@@ -1,14 +1,12 @@
-""" Python class depicting a Convolutional Neural Network (CNN).
+""" Python class depicting a Temporal Convolution Network (TCN).
 """
 
-import tensorflow as tf
-
 from .base_model import BaseModel
-from .layer_functions import add_conv_layer, add_fc_layer
+from .layer_functions import add_fc_layer, TemporalConvNet
 
 
-class CNN(BaseModel):
-    """Convolutional Neural Network class
+class TCN(BaseModel):
+    """Temporal Convolution Network class
 
     :param model_settings: a dictionary containing the model settings
     """
@@ -17,14 +15,10 @@ class CNN(BaseModel):
         # Initializes the BaseModel
         super().__init__(model_settings=model_settings)
 
-        # Instanciates CNN-specific variables
-        self.input_reshape = model_settings["input_reshape"] \
-            if "input_reshape" in model_settings else None
-        self.conv_layers = model_settings["conv_layers"]
-        self.conv_filters = model_settings["conv_filters"]
-        self.conv_filter_size = model_settings["conv_filter_size"]
-        self.conv_maxpool = model_settings["conv_maxpool"]
-        self._check_conv_settings()
+        # Instanciates TCN-specific variables
+        self.tcn_layers = model_settings['tcn_layers']
+        self.tcn_filter_size = model_settings['tcn_filter_size']
+        self.tcn_features = model_settings['tcn_features']
 
     # ---------------------------------------------------------------------------------------------
     # Model interface functions
@@ -34,34 +28,33 @@ class CNN(BaseModel):
         # Sets: learning_rate_var, dropout, model_input, model_target, is_learning
         self._set_graph_io()
 
-        # Adds the convolutional layers
-        conv_output = None
-        for layer_idx in range(self.conv_layers):
-            conv_output = add_conv_layer(
-                self.conv_filter_size[layer_idx],
-                self.conv_filters[layer_idx],
-                self.conv_maxpool[layer_idx],
-                conv_output if conv_output is not None else self.model_input,
-            )
+        # Adds the TCN itself
+        tcn = TemporalConvNet(
+            self.tcn_features if isinstance(self.tcn_features, list) \
+                else [self.tcn_features] * self.tcn_layers,
+            kernel_size=self.tcn_filter_size,
+            dropout=self.dropout
+        )
+        tcn_output = tcn(self.model_input, training=self.is_training)[:, -1, :]
 
-        # Reshapes last convolutional output to a flat layer
-        conv_elements = conv_output.shape[1] * conv_output.shape[2] * conv_output.shape[3]
-        conv_output_flat = tf.reshape(conv_output, [-1, conv_elements])
-
-        # Adds fully connected layers
+        # Adds fully connected layers (optional step)
         fcn_output = None
         for _ in range(self.fc_layers):
             fcn_output = add_fc_layer(
-                fcn_output if fcn_output is not None else conv_output_flat,
+                fcn_output if fcn_output is not None else tcn_output,
                 self.fc_neurons,
                 self.dropout_var
             )
 
         # Adds the output layer, storing the train step
         if self.output_type == "classification":
-            self.train_step = self._add_classification_output(fcn_output)
+            self.train_step = self._add_classification_output(
+                fcn_output if fcn_output else tcn_output
+            )
         else:   # (regression)
-            self.train_step = self._add_regression_output(fcn_output)
+            self.train_step = self._add_regression_output(
+                fcn_output if fcn_output else tcn_output
+            )
 
         # Sets: saver, session; Initializes TF variables
         self._prepare_model_for_training()
@@ -94,14 +87,14 @@ class CNN(BaseModel):
         """
         return self._predict(X, validation=validation)
 
-    def save(self, model_name="cnn"):
+    def save(self, model_name="lstm"):
         """ Stores all model data inside the specified folder, given the model name
 
         :param model_name: the name of the model
         """
         self._save(model_name=model_name)
 
-    def load(self, model_name="cnn"):
+    def load(self, model_name="lstm"):
         """ Loads all model data from the specified folder, given the model name
 
         :param model_name: the name of the model
@@ -115,19 +108,3 @@ class CNN(BaseModel):
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: misc
-    def _check_conv_settings(self):
-        """ Checks if the CNN's settings have the expected shape
-        """
-        # Checks conv layers
-        for hyperparam in ("conv_filters", "conv_filter_size", "conv_maxpool"):
-            assert self.conv_layers == len(getattr(self, hyperparam)), "The hyperparameter "\
-                "{} does not has the expected dimension ({})".format(hyperparam, self.conv_layers)
-        for hyperparam in ("conv_filter_size", "conv_maxpool"):
-            for layer in range(self.conv_layers):
-                assert len(getattr(self, hyperparam)[layer]) == 2, "Currently, only 2D "\
-                    "convolutions are supported. (Check the {}-th layer on {})".format(layer,
-                    hyperparam)
-        # Checks other settings
-        assert len(self.input_shape) == 3 or len(self.input_reshape) == 3, "For a CNN network, "\
-            "the input shape (or reshape) should have 3 dimentions (got {})".format(
-            len(self.input_shape))

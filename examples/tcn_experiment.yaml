@@ -1,0 +1,92 @@
+description: Parameters used to train an TCN for the BFF problem
+
+# -------------------------------------------------------------------------------------------------
+# *** Settings for data preprocessing ***
+# IMPORTANT - avoid changing these data_parameters (other than the file paths), unless you really
+# understand the consequences in the code. Most parameters came from the ray-tracing simulations
+# themselves
+data_parameters:
+    input_file: '../bff_data/final_table'
+    preprocessed_file: '../bff_data/preprocessed_dataset'
+    max_time: 6                 #in microseconds
+    sample_freq: 20             #in MHz
+    beamformings: 32
+    original_tx_power: 30       #in dBm
+    original_rx_gain: 0         #in dBi
+    power_offset: 170
+    power_scale: 0.01
+    pos_grid: [400.0, 400.0]    #in meters
+    pos_shift: [183.0, 176.0]   #in meters
+    keep_timeslots: [1, 82]
+    run_sanity_checks: True
+
+
+# -------------------------------------------------------------------------------------------------
+# *** Settings for path generation ***
+path_parameters:
+    paths_file: '../bff_data/paths'
+    time_steps: 7             # Length of the path, in seconds (1 sample/second)
+
+    s_paths: True             # enables static paths
+
+    p_paths: True             # enables pedestrian-like paths
+    p_avg_speed: 1.4          # pedestrian avg speed (m/s)
+    p_max_speed: 2.0          # pedestrian max speed (m/s)
+    p_acceleration: 0.3       # pedestrian max speed change (m/s^2)
+    p_direction_change: 10.0  # pedestrian max direction change (angle in degrees, per second)
+    #pedestrian probability of [no change; full stop; direction change; speed change] each second
+    p_move_proba: [0.8, 0.1, 0.05, 0.05]
+
+    c_paths: True             # enables car-like paths
+    c_avg_speed: 8.3          # avg speed (m/s): ~30kmh or ~18.6mph
+    c_max_speed: 13.9         # max speed (m/s): ~50kmh or ~31.1mph
+    c_acceleration: 3         # car max speed change (m/s^2)
+    c_direction_change: 5.0   # car max direction change (angle in degrees, per second)
+    #car probability of [no change; full stop; direction change; speed change] each second
+    c_move_proba: [0.8, 0.02, 0.05, 0.13]
+
+    moving_paths_multiplier: 4.0    # Samples "<this>*number_of_static_paths" pedestrian and car
+                                    # paths (so, a total of "2*<this>*number_of_static_paths")
+                                    # moving paths
+
+
+# -------------------------------------------------------------------------------------------------
+# *** Settings for overall experiment control ***
+experiment_settings:
+    detection_threshold: -100   # in dBm  [depends on the sample fequency, thermal noise]
+    tx_power: 45                # in dBm
+    rx_gain: 10                 # in dBi
+    noise_std: 6                # in dB  [Gaussian noise applied over dB values -> "log-normal"]
+    scaler_type: "binarizer"
+    model_type: "tcn"
+    predictions_file: "model_predictions"
+    tests_per_path: 5
+    train_sample_fraction: 0.05 # will use this fraction of the train set each "epoch" (check code)
+
+
+# -------------------------------------------------------------------------------------------------
+# *** Settings for model hyperparameters ***
+ml_parameters:
+    # IO settings
+    input_name: "input"
+    input_shape: [7, 2592]    # time_steps, data samples per time step
+    output_name: "location"
+    output_type: "regression"
+    output_shape: [2]
+    validation_metric: "euclidean_distance"
+    model_folder: "../experiments_results/tcn/"
+
+    # basic model hyperparams
+    optimizer_type: "ADAM"
+    batch_size: 64
+    max_epochs: 1000
+    early_stopping: 50          # Stops training after these epochs without improvement on val set
+    val_eval_period: 5          # Periodicity of validation score (and early stopping eval)
+    learning_rate: 0.0005       # = 5e-4
+    learning_rate_decay: 0.995  # Multiplicative term at the end of each epoch
+    target_gpu: "0"
+
+    # architecture specific hyperparams
+    tcn_layers: 2               # Each layer has 2 convolutions and 1 residual block. Total spawn =
+    tcn_filter_size: 3          # 1 + [sum[i=0, layers-1] (filter_size-1) * 2^i * 2]
+    tcn_features: 512           # 2 layers, 3 filter length -> spawn = 13

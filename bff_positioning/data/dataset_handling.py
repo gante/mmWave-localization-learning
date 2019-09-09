@@ -2,8 +2,8 @@
 """
 
 import logging
-import numpy as np
 import concurrent.futures
+import numpy as np
 
 from sklearn.preprocessing import Binarizer, Normalizer
 

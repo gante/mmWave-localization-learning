@@ -25,7 +25,7 @@ class LSTM(BaseModel):
     def set_graph(self):
         """ Sets the TF graph and initializes the session
         """
-        # Sets: learning_rate_var, keep_prob, model_input, model_target
+        # Sets: learning_rate_var, dropout, model_input, model_target, is_learning
         self._set_graph_io()
 
         # Adds the LSTM cell

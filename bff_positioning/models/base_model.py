@@ -69,17 +69,23 @@ class BaseModel():
         self.output_shape = model_settings["output_shape"]
         self.validation_metric = model_settings["validation_metric"]
         self.batch_size = model_settings["batch_size"]
-        self.batch_size_inference = model_settings["batch_size_inference"]
-        self.dropout = model_settings["dropout"]
         self.early_stopping = model_settings["early_stopping"]
-        self.val_eval_period = model_settings["val_eval_period"] \
-            if "val_eval_period" in model_settings else 1
         self.max_epochs = model_settings["max_epochs"]
-        self.fc_layers = model_settings["fc_layers"]
-        self.fc_neurons = model_settings["fc_neurons"]
         self.learning_rate = model_settings["learning_rate"]
         self.learning_rate_decay = model_settings["learning_rate_decay"]
         self.optimizer_type = model_settings["optimizer_type"]
+
+        # Instatiates optional model settings
+        self.batch_size_inference = model_settings["batch_size_inference"] \
+            if "batch_size_inference" in model_settings else self.batch_size
+        self.val_eval_period = model_settings["val_eval_period"] \
+            if "val_eval_period" in model_settings else 1
+        self.dropout = model_settings["dropout"] \
+            if "dropout" in model_settings else 0.
+        self.fc_layers = model_settings["fc_layers"] \
+            if "fc_layers" in model_settings else 0
+        self.fc_neurons = model_settings["fc_neurons"] \
+            if "fc_neurons" in model_settings else 0
 
         # Instantiates other common variables that might be used later
         self.current_validation_score = None
@@ -191,6 +197,7 @@ class BaseModel():
                     self.model_target: Y[start_batch:end_batch, ...],
                     self.dropout_var: self.dropout,
                     self.learning_rate_var: self.current_learning_rate,
+                    self.is_training: True
                 },
                 session=self.session)
 
@@ -235,6 +242,7 @@ class BaseModel():
                 feed_dict={
                     self.model_input: X[start_batch:end_batch, ...],
                     self.dropout_var: 0.0,
+                    self.is_training: False
                 },
                 session=self.session
             )
@@ -273,6 +281,8 @@ class BaseModel():
         self.learning_rate_var = tf.compat.v1.placeholder(tf.float32, shape=[])
         # Dropout probability
         self.dropout_var = tf.compat.v1.placeholder(tf.float32, name='dropout')
+        # Boolean that is true when the model is training
+        self.is_training = tf.compat.v1.placeholder(tf.bool, name='is_training')
 
         if self.input_type == "float":
             self.model_input = tf.compat.v1.placeholder(

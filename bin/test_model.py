@@ -15,7 +15,7 @@ import numpy as np
 
 from bff_positioning.data import Preprocessor, PathCreator, create_noisy_features, \
     get_95th_percentile, undersample_bf, undersample_space, sample_paths
-from bff_positioning.models import CNN, LSTM, score_predictions
+from bff_positioning.models import CNN, LSTM, TCN, score_predictions
 
 
 def main():
@@ -58,13 +58,16 @@ def main():
     if experiment_settings["model_type"].lower() == "cnn":
         ml_parameters["input_type"] = "float"
         model = CNN(ml_parameters)
-    elif experiment_settings["model_type"].lower() == "lstm":
+    elif experiment_settings["model_type"].lower() in ("lstm", "tcn"):
         assert path_parameters, "This model requires `paths_parameters`. See the example."
         assert path_parameters["time_steps"] == ml_parameters["input_shape"][0], "The ML model "\
             "first input dimention must match the length of the paths! (path length = {}, model)"\
             "input = {})".format(path_parameters["time_steps"], ml_parameters["input_shape"][0])
         ml_parameters["input_type"] = "bool"
-        model = LSTM(ml_parameters)
+        if experiment_settings["model_type"].lower() == "lstm":
+            model = LSTM(ml_parameters)
+        else:
+            model = TCN(ml_parameters)
     else:
         raise ValueError("The simulation settings specified 'model_type'={}. Currently, only "
             "'cnn', 'lstm', and 'tcn' are supported.".format(experiment_settings["model_type"]))
