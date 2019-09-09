@@ -3,6 +3,7 @@
 
 import logging
 import numpy as np
+import concurrent.futures
 
 from sklearn.preprocessing import Binarizer, Normalizer
 
@@ -222,9 +223,10 @@ def _static_paths_sampler(
     Note - static paths format = {(x, y): index in the dataset}
     """
     X, y = [], []
-    for idx, index_in_dataset in enumerate(paths.values()):
-        if not mask[idx]:
-            continue
+    list_of_wanted_positions = np.asarray(list(paths.values()))[mask]
+
+    def _process_a_path(index_in_dataset):
+        x_sequence, label = None, None
         x_sequence = [features[index_in_dataset, :]]*time_steps
         x_sequence = _apply_noise_and_scaler(
             np.asarray(x_sequence),
@@ -232,8 +234,15 @@ def _static_paths_sampler(
             data_parameters
         )
         if x_sequence is not None:
-            y.append(labels[index_in_dataset, :])
-            X.append(x_sequence)
+            label = labels[index_in_dataset, :]
+        return x_sequence, label
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for x_sequence, label in executor.map(_process_a_path, list_of_wanted_positions):
+            if label is not None:
+                X.append(x_sequence)
+                y.append(label)
+
     return np.asarray(X), np.asarray(y)
 
 
@@ -250,10 +259,10 @@ def _moving_paths_sampler(
     Note - moving paths format = [[dataset index for pos_1, dataset index for pos_2, ...], [...]]
     """
     X, y = [], []
-    for idx, sequence_of_indexes in enumerate(paths):
-        if not mask[idx]:
-            continue
-        x_sequence = []
+    list_of_wanted_sequences = np.asarray(paths)[mask, :]
+
+    def _process_a_path(sequence_of_indexes):
+        x_sequence, label = [], None
         for dataset_index in sequence_of_indexes:
             x_sequence.append(features[dataset_index, :])
         assert len(x_sequence) == time_steps, "The length of the obtained sequence ({}) does "\
@@ -264,8 +273,15 @@ def _moving_paths_sampler(
             data_parameters
         )
         if x_sequence is not None:
-            y.append(labels[sequence_of_indexes[-1], :])
-            X.append(x_sequence)
+            label = labels[sequence_of_indexes[-1], :]
+        return x_sequence, label
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for x_sequence, label in executor.map(_process_a_path, list_of_wanted_sequences):
+            if label is not None:
+                X.append(x_sequence)
+                y.append(label)
+
     return np.asarray(X), np.asarray(y)
 
 
@@ -282,8 +298,6 @@ def _apply_noise_and_scaler(
         experiment_settings,
         data_parameters
     )
-    scaler = _get_scaler(experiment_settings["scaler_type"])
-
     noise = np.random.normal(scale=scaled_noise, size=sequence.shape)
     noisy_sequence = sequence + noise
     noisy_sequence[noisy_sequence < scaled_cutoff] = 0
@@ -296,6 +310,7 @@ def _apply_noise_and_scaler(
         return None
 
     #Applies the scaler
+    scaler = _get_scaler(experiment_settings["scaler_type"])
     if scaler is not None:
         noisy_sequence = scaler.fit_transform(noisy_sequence)
         if experiment_settings["scaler_type"] == "binarizer":
@@ -338,83 +353,49 @@ def sample_paths(
 
     X = None
     y = None
-    paths_type_delimiter = {'s': 0, 'p': 0, 'c': 0}
+    paths_type_delimiter = []
     assert 0. <= sample_fraction <= 1., "sample_fraction should be between 0.0 and 1.0!"
     assert labels.shape[0] == features.shape[0], "The features and the labels must have the same "\
         "input length!"
 
-    # Sample static paths
-    if paths['s']:
+    def _process_path_type(path_tuple):
+        """ path_tuple: (path_type, paths_for_this_type) """
         # Creates a probabilistic mask (skip paths with probability 1-sample_fraction)
-        mask = np.random.uniform(size=len(paths['s']))
+        mask = np.random.uniform(size=len(path_tuple[1]))
         mask[mask < sample_fraction] = 1.0
         mask[mask < 1.0] = 0.0
 
-        # For each position, samples a sequence with size=time_steps.
-        x_static, y_static = _static_paths_sampler(
-            mask,
-            paths['s'],
-            features,
-            labels,
-            time_steps,
-            experiment_settings,
-            data_parameters
-        )
-        if X is None:
-            X = x_static
-            y = y_static
-        paths_type_delimiter['s'] = len(X)
-        paths_type_delimiter['p'] = len(X)
-        paths_type_delimiter['c'] = len(X)
-        del x_static, y_static
-
-    # Sample pedestrian paths
-    if paths['p']:
-        mask = np.random.uniform(size=len(paths['p']))
-        mask[mask < sample_fraction] = 1.0
-        mask[mask < 1.0] = 0.0
-
-        x_ped, y_ped = _moving_paths_sampler(
-            mask,
-            paths['p'],
-            features,
-            labels,
-            time_steps,
-            experiment_settings,
-            data_parameters
-        )
-        if X is None:
-            X = x_ped
-            y = y_ped
+        # Samples a sequences with size=time_steps.
+        if path_tuple[0] == 's':
+            x_path, y_path = _static_paths_sampler(
+                mask.astype(bool),
+                path_tuple[1],
+                features,
+                labels,
+                time_steps,
+                experiment_settings,
+                data_parameters
+            )
         else:
-            X = np.append(X, x_ped, axis=0)
-            y = np.append(y, y_ped, axis=0)
-        paths_type_delimiter['p'] = len(X)
-        paths_type_delimiter['c'] = len(X)
-        del x_ped, y_ped
+            assert path_tuple[0] in ('p', 'c')
+            x_path, y_path = _moving_paths_sampler(
+                mask.astype(bool),
+                path_tuple[1],
+                features,
+                labels,
+                time_steps,
+                experiment_settings,
+                data_parameters
+            )
+        return x_path, y_path, path_tuple[0]
 
-    # Sample car paths
-    if paths['c']:
-        mask = np.random.uniform(size=len(paths['c']))
-        mask[mask < sample_fraction] = 1.0
-        mask[mask < 1.0] = 0.0
-
-        x_car, y_car = _moving_paths_sampler(
-            mask,
-            paths['c'],
-            features,
-            labels,
-            time_steps,
-            experiment_settings,
-            data_parameters
-        )
+    for x_path, y_path, path_type in map(_process_path_type, paths.items()):
+        paths_type_delimiter.append((path_type, y_path.shape[0]))
         if X is None:
-            X = x_car
-            y = y_car
+            X = x_path
+            y = y_path
         else:
-            X = np.append(X, x_car, axis=0)
-            y = np.append(y, y_car, axis=0)
-        paths_type_delimiter['c'] = len(X)
-        del x_car, y_car
+            X = np.append(X, x_path, axis=0)
+            y = np.append(y, y_path, axis=0)
 
     return np.asarray(X), np.asarray(y), paths_type_delimiter

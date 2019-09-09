@@ -165,18 +165,14 @@ class BaseModel():
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: model training
-    def _train_epoch(self, X, Y, use_last_batch=True):
+    def _train_epoch(self, X, Y):
         """Default training routine - trains the model for an epoch
 
         :param X: numpy array with the features
         :param Y: numpy array with the labels
-        :param use_last_batch: boolean indicating whether the last batch should be used
         """
         assert X.shape[0] == Y.shape[0], "X and Y have a different number of samples!"
-        if use_last_batch:
-            max_batches = int(np.ceil(X.shape[0] / self.batch_size))
-        else:
-            max_batches = int(np.floor(X.shape[0] / self.batch_size))
+        max_batches = int(np.ceil(X.shape[0] / self.batch_size))
         X, Y = shuffle(X, Y)
         train_string = "Training on epoch: {:4} || LR: {:3.2E} ||"
 
@@ -219,17 +215,14 @@ class BaseModel():
                     keep_training = self._eval_early_stopping(val_score)
         return keep_training, val_score
 
-    def _predict(self, X, use_last_batch=True):
+    def _predict(self, X):
         """ Returns the predictions on the given data
 
         :param X: numpy array with the features
         :param use_last_batch: boolean indicating whether the last batch should be used
         :return: an numpy array with the predictions
         """
-        if use_last_batch:
-            max_batches = int(np.ceil(X.shape[0] / self.batch_size))
-        else:
-            max_batches = int(np.floor(X.shape[0] / self.batch_size))
+        max_batches = int(np.ceil(X.shape[0] / self.batch_size))
         predictions = []
         for batch_idx in range(max_batches):
             start_batch = batch_idx * self.batch_size_inference

@@ -29,16 +29,14 @@ class LSTM(BaseModel):
         self._set_graph_io()
 
         # Adds the LSTM cell
-        lstm_cell = tf.nn.rnn_cell.LSTMCell(self.lstm_neurons)
-        initial_state = lstm_cell.zero_state(self.batch_size, dtype=tf.float32)
-        lstm_output, _ = tf.nn.dynamic_rnn(lstm_cell, self.model_input, initial_state=initial_state)
-        fcn_input = lstm_output[:, -1, :]
+        lstm_layer = tf.keras.layers.CuDNNLSTM(self.lstm_neurons)
+        lstm_output = lstm_layer(self.model_input)
 
         # Adds fully connected layers
         fcn_output = None
         for _ in range(self.fc_layers):
             fcn_output = add_fc_layer(
-                fcn_output if fcn_output is not None else fcn_input,
+                fcn_output if fcn_output is not None else lstm_output,
                 self.fc_neurons,
                 self.dropout_var
             )
@@ -59,7 +57,7 @@ class LSTM(BaseModel):
         :param X: numpy array with the features
         :param Y: numpy array with the labels
         """
-        self._train_epoch(X, Y, use_last_batch=False)
+        self._train_epoch(X, Y)
 
     def epoch_end(self, X=None, Y=None):
         """ Performs end of epoch operations, such as decaying the learning rate. Some
@@ -77,7 +75,7 @@ class LSTM(BaseModel):
         :param X: numpy array with the features
         :return: an numpy array with the predictions
         """
-        return self._predict(X, use_last_batch=False)
+        return self._predict(X)
 
     def save(self, model_name="lstm"):
         """ Stores all model data inside the specified folder, given the model name
