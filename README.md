@@ -1,6 +1,8 @@
 # Beamformed Fingerprint Learning
 
+
 [Last major update: 10-Sep-2019 (Code updated and converted into Python package)]
+
 
 A ML based algorithm that enables accurate positioning from mmWave transmissions - with and without tracking.
 
@@ -156,6 +158,7 @@ The use of a tracking or a non-tracking dataset is entirely defined by the model
 
 Assuming you have set a configuration file in `/path/to/config.yaml`, and the configuration file's `input_file` option contains the path to the downloaded `final_table`, these are the steps to fully run an experiment:
 
+
 ```
 python3 bin/preprocess_dataset.py /path/to/config.yaml
 python3 bin/train_model.py /path/to/config.yaml
@@ -178,6 +181,7 @@ For the settings defined in `examples/tcn_experiment.yaml`, the aforementioned s
 *Unfortunatelly, the archaic tool I built for that is written in C, and requires extra steps (see instructions [here](/parsing)).*
 *The `final_table` file, available in the link to the used data, contains the output of that parsing for a sampling frequency of 20MHz.*
 *Let me know if you require aid here.*
+
 
 ## License
 
