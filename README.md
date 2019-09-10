@@ -168,7 +168,7 @@ The last step ends with the key metrics being printed to your terminal. If you w
 python3 visualization/plot_histogram.py /path/to/config.yaml
 ```
 
-For the setting defined in `examples/tcn_experiment.yaml`, the previous command should yield the following plot.
+For the settings defined in `examples/tcn_experiment.yaml`, the aforementioned set of commands should yield the following plot.
 
 <p align="center">
   <img src="visualization/repo_images/histogram_tracking.PNG" width="480"/>
