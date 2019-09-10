@@ -16,11 +16,12 @@ A ML based algorithm that enables accurate positioning from mmWave transmissions
 3. [Getting Started](#getting-started)
     - [Before Installing](#before-installing)
     - [Installation](#installation)
-    - [Data Downloading](#data-downloading)
+    - [Dataset](#dataset)
 4. [Experiments](#experiments)
    - [Configuration](#configuration)
+   - [Tracking](#tracking)
    - [Running an Experiment](#running-an-experiment)
-5. [License](#licence)
+5. [License](#license)
 6. [Acknowledgments](#acknowledgments)
 
 
@@ -30,9 +31,10 @@ A ML based algorithm that enables accurate positioning from mmWave transmissions
 ## Background
 
 With **5G millimeter wave wireless communications**, the resulting radiation reflects on most visible
-objects, creating rich multipath environments. The radiation is thus significantly shaped by the obstacles
+objects, creating rich multipath environments, as depicted in the simulation below.
+The radiation is thus significantly shaped by the obstacles
 it interacts with, carrying latent information regarding the relative positions of the transmitter, the
-obstacles, and the mobile receiver, as depicted in the simulation below.
+obstacles, and the mobile receiver.
 
 
 <p align="center">
@@ -40,11 +42,11 @@ obstacles, and the mobile receiver, as depicted in the simulation below.
 </p>
 
 
-In this GitHub repository, the creation of **beamformed fingerprints** is achieved
-through a pre-established codebook of beamforming patterns transmitted by a **single base station** (see examples below).
+In this work, the creation of **beamformed fingerprints** is achieved
+through a pre-established codebook of beamforming patterns transmitted by a **single base station**.
 Making use of the aforementioned hidden information, deep learning techniques are employed to
-convert the received beamformed fingerprints into a mobile device’s position. The average errors of down to
-**3.30/1.78 meters (non-tracking/tracking)** are obtained
+convert the received beamformed fingerprints (see examples below) into a mobile device’s position.
+Average errors of down to **3.30/1.78 meters (non-tracking/tracking)** are obtained
 on realistic outdoor scenarios, containing **mostly non-line-of-sight positions**, making it a very competitive
 and promising alternative for **outdoor positioning**.
 
@@ -57,7 +59,6 @@ The image shown at the top contains the simulated results for the average error 
 is the red triangle at the center of the image, and most of the solid yellow shapes are buildings, it is possible to
 confirm that **being in a NLOS position is not a constraint for the proposed system**. It is able to provide an estimative for
 every position that has mmWave signal.
-
 
 For more information, refer to [papers](#papers) section of this README file. If you find any issue, please contact me
 (joao.gante@tecnico.ulisboa.pt).
@@ -97,6 +98,7 @@ The main citation for this work is the following:
 
 
 
+
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
@@ -123,9 +125,9 @@ pip3 install -e mmWave-localization-learning/
 pip3 install -r mmWave-localization-learning/requirements.txt
 ```
 
-### Data Downloading
+### Dataset
 
-The data is available [here](https://drive.google.com/drive/folders/1gfbZKCsq4D1tvPzPHLftWljsVaL2pjg_?usp=sharing). If the link is broken or something is not working properly, please contact me through email (joao.gante@tecnico.ulisboa.pt).
+The dataset is available [here](https://drive.google.com/drive/folders/1gfbZKCsq4D1tvPzPHLftWljsVaL2pjg_?usp=sharing). If the link is broken or something is not working properly, please contact me through email (joao.gante@tecnico.ulisboa.pt).
 
 The data was generated using the [Wireless InSite ray-tracing simulator](https://www.remcom.com/wireless-insite-em-propagation-software/) and a [high precision open-source 3D map of New York](http://www1.nyc.gov/site/doitt/initiatives/3d-building.page), made available by the New York City Department of Information Technology & Telecommunications.
 The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Management Center](https://goo.gl/maps/xrqvT9VS59K2).
@@ -138,8 +140,17 @@ The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Ma
 ### Configuration
 
 All experiments steps are controled by the *configuration file*, a `.yaml` file with all the options for the desired experiment.
-I recommend the creation of a new configuration file for each experiment, and a few examples are available [here](examples/). These examples can reproduce the results of [this](#citation) paper, and the available options are either self-explainatory,
+I recommend the creation of a new configuration file for each experiment, and a few examples are available [here](examples/).
+These examples can reproduce the results of [this](#citation) paper, and the available options are either self-explainatory,
 or have plenty of comments in the file.
+
+### Tracking
+
+The use of a tracking or a non-tracking dataset is entirely defined by the model architecture (`model_type` option in the configuration file). A non-tracking dataset will be build from noisy instances of each position's data. On the other hand, the tracking dataset is first built by generating synthetic paths (as seen below), and then drawing noisy instances of the dataset for each position in a path.
+
+<p align="center">
+  <img src="visualization/repo_images/paths.PNG" width="480"/>
+</p>
 
 ### Running an Experiment
 
@@ -156,6 +167,12 @@ The last step ends with the key metrics being printed to your terminal. If you w
 ```
 python3 visualization/plot_histogram.py /path/to/config.yaml
 ```
+
+For the setting defined in `examples/tcn_experiment.yaml`, the previous command should yield the following plot.
+
+<p align="center">
+  <img src="visualization/repo_images/histogram_tracking.PNG" width="480"/>
+</p>
 
 *Note - If different sampling frequencies are desired, the original, text-based data (`CIR32_zip`) must be parsed again.*
 *Unfortunatelly, the archaic tool I built for that is written in C, and requires extra steps (see instructions [here](/parsing)).*
