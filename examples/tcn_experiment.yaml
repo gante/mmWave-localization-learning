@@ -88,5 +88,5 @@ ml_parameters:
 
     # architecture specific hyperparams
     tcn_layers: 2               # Each layer has 2 convolutions and 1 residual block. Total spawn =
-    tcn_filter_size: 3          # 1 + [sum[i=0, layers-1] (filter_size-1) * 2^i * 2]
-    tcn_features: 512           # 2 layers, 3 filter length -> spawn = 13
+    tcn_filter_size: 3          #   1 + [sum[i=0, layers-1] (filter_size-1) * 2^i * 2]
+    tcn_features: 512           #   2 layers, 3 filter length -> spawn = 13

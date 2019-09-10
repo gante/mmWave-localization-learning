@@ -211,17 +211,18 @@ class BaseModel():
         """
         keep_training = True
         val_score = None
+
+        # Decays LR
+        self.current_learning_rate *= self.learning_rate_decay
+        if y_true is not None and y_pred is not None:
+            len_pred = y_pred.shape[0]
+            val_score = score_predictions(y_true[:len_pred, :], y_pred, self.validation_metric)
+            if self.early_stopping:
+                # Evaluates early stopping, if requested
+                keep_training = self._eval_early_stopping(val_score)
+
         if self.current_epoch >= self.max_epochs:
             keep_training = False
-        else:
-            # Decays LR
-            self.current_learning_rate *= self.learning_rate_decay
-            if y_true is not None and y_pred is not None:
-                len_pred = y_pred.shape[0]
-                val_score = score_predictions(y_true[:len_pred, :], y_pred, self.validation_metric)
-                if self.early_stopping:
-                    # Evaluates early stopping, if requested
-                    keep_training = self._eval_early_stopping(val_score)
         return keep_training, val_score
 
     def _predict(self, X, validation):

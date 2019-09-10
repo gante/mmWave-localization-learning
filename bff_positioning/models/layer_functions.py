@@ -109,7 +109,7 @@ def add_conv_layer(filter_shape, n_filters, max_pool_shape, input_data):
 # TCN functions
 # Adapted from * and the code therein.
 # * = https://medium.com/the-artificial-impostor/notes-understanding-tensorflow-part-3-7f6633fcc7c7
-class CausalConv1D(tf.layers.Conv1D):
+class CausalConv1D(tf.compat.v1.layers.Conv1D):
     """1D convolution with padding"""
     def __init__(self, filters,
                kernel_size,
@@ -154,7 +154,7 @@ class CausalConv1D(tf.layers.Conv1D):
         return super(CausalConv1D, self).call(inputs)
 
 
-class TemporalBlock(tf.layers.Layer):
+class TemporalBlock(tf.compat.v1.layers.Layer):
     """ TCN's "layer", containing the residual network and the convolutions, with
     adjustable dilation.
     """
@@ -181,15 +181,15 @@ class TemporalBlock(tf.layers.Layer):
 
     def build(self, input_shape):
         channel_dim = 2
-        self.dropout1 = tf.layers.Dropout(self.dropout, [tf.constant(1),
+        self.dropout1 = tf.compat.v1.layers.Dropout(self.dropout, [tf.constant(1),
             tf.constant(1), tf.constant(self.n_outputs)])
-        self.dropout2 = tf.layers.Dropout(self.dropout, [tf.constant(1),
+        self.dropout2 = tf.compat.v1.layers.Dropout(self.dropout, [tf.constant(1),
             tf.constant(1), tf.constant(self.n_outputs)])
         if input_shape[channel_dim] != self.n_outputs:
             # self.down_sample = tf.layers.Conv1D(
             #     self.n_outputs, kernel_size=1,
             #     activation=None, data_format="channels_last", padding="valid")
-            self.down_sample = tf.layers.Dense(self.n_outputs, activation=None)
+            self.down_sample = tf.compat.v1.layers.Dense(self.n_outputs, activation=None)
         self.built = True
 
     def call(self, inputs, training=True):
@@ -204,7 +204,7 @@ class TemporalBlock(tf.layers.Layer):
         return tf.nn.relu(x + inputs)
 
 
-class TemporalConvNet(tf.layers.Layer):
+class TemporalConvNet(tf.compat.v1.layers.Layer):
     """TCN's main class. See the __init__ for more parameter information
 
     Key Input Parameters:

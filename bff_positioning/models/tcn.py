@@ -1,6 +1,8 @@
 """ Python class depicting a Temporal Convolution Network (TCN).
 """
 
+import os
+
 from .base_model import BaseModel
 from .layer_functions import add_fc_layer, TemporalConvNet
 
@@ -19,6 +21,9 @@ class TCN(BaseModel):
         self.tcn_layers = model_settings['tcn_layers']
         self.tcn_filter_size = model_settings['tcn_filter_size']
         self.tcn_features = model_settings['tcn_features']
+
+        # Disables TF's verbose warnings about memory usage
+        os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
     # ---------------------------------------------------------------------------------------------
     # Model interface functions
@@ -40,6 +45,7 @@ class TCN(BaseModel):
         # Adds fully connected layers (optional step)
         fcn_output = None
         for _ in range(self.fc_layers):
+            print("\n\nasdf\n\n")
             fcn_output = add_fc_layer(
                 fcn_output if fcn_output is not None else tcn_output,
                 self.fc_neurons,
