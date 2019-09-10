@@ -148,7 +148,7 @@ or have plenty of comments in the file.
 
 ### Tracking
 
-The use of a tracking or a non-tracking dataset is entirely defined by the model architecture (`model_type` option in the configuration file). A non-tracking dataset will be build from noisy instances of each position's data. On the other hand, the tracking dataset is first built by generating synthetic paths (as seen below), and then drawing noisy instances of the dataset for each position in a path.
+The use of a tracking or a non-tracking dataset is entirely defined by the model architecture, defined in the `model_type` option in the configuration file (`lstm` and `tcn` are the tracking options). A non-tracking dataset will be build from noisy instances of each position's data. On the other hand, the tracking dataset is first built by generating synthetic paths (as seen below), and then drawing noisy instances of the dataset for each position in a path.
 
 <p align="center">
   <img src="visualization/repo_images/paths.PNG" width="480"/>
