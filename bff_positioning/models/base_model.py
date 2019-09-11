@@ -98,6 +98,7 @@ class BaseModel():
         self.train_step = None
         self.learning_rate_var = None
         self.dropout_var = None
+        self.is_training = None
         self.model_input = None
         self.model_output = None
         self.model_target = None
@@ -425,6 +426,7 @@ class BaseModel():
         self.model_input = graph.get_tensor_by_name(self.input_name + ":0")
         self.model_output = graph.get_tensor_by_name(self.output_name + ":0")
         self.dropout_var = graph.get_tensor_by_name("dropout:0")
+        self.is_training = graph.get_tensor_by_name("is_training:0")
 
     def _set_session(self):
         """ Default function to set the session
