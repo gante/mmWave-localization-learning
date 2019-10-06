@@ -233,10 +233,10 @@ class Preprocessor():
             to_plot = np.full([int(self.pos_grid[0]) + 1, int(self.pos_grid[1]) + 1], 0.0)
             for pos_idx in tqdm(range(self.labels.shape[0])):
                 # Scales 0-1 to 0-N/M
-                pos_x = round(self.labels[pos_idx, 0] * self.pos_grid[0])
-                pos_y = round(self.labels[pos_idx, 1] * self.pos_grid[1])
+                pos_x = int(round(self.labels[pos_idx, 0] * self.pos_grid[0]))
+                pos_y = int(round(self.labels[pos_idx, 1] * self.pos_grid[1]))
                 # Flips Y (to correctly plot with imshow)
-                to_plot[pos_x, self.pos_grid[1] - pos_y] = 1.0
+                to_plot[pos_x, int(round(self.pos_grid[1] - pos_y))] = 1.0
             # Local import to avoid messing non-gaphical interfaces
             matplotlib.use('agg')
             import matplotlib.pyplot as plt
