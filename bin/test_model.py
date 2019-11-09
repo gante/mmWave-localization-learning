@@ -1,7 +1,7 @@
 """
 Runs the test dataset over the data, and stores the predictions
 
-The arguments are loaded from a .yaml file, which is the input argument of this scirpt
+The arguments are loaded from a .yaml file, which is the input argument of this script
 (Instructions to run: `python test_model.py <path to .yaml file>`)
 """
 
@@ -53,7 +53,7 @@ def main():
             "unless the code for the path creation is updated"
         features, labels = undersample_space(features, labels, data_parameters["undersample_space"])
 
-    # Initializes the model and prepares it for training
+    # Initializes the model and prepares it for testing
     logging.info("Initializing the model (type = %s)...", experiment_settings["model_type"].lower())
     if experiment_settings["model_type"].lower() == "cnn":
         ml_parameters["input_type"] = "float"
