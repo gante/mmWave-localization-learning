@@ -1,7 +1,7 @@
 """
 Runs the test dataset over the data, and stores the predictions
 
-The arguments are loaded from a .yaml file, which is the input argument of this scirpt
+The arguments are loaded from a .yaml file, which is the input argument of this script
 (Instructions to run: `python test_model.py <path to .yaml file>`)
 """
 
@@ -15,7 +15,8 @@ import numpy as np
 
 from bff_positioning.data import Preprocessor, PathCreator, create_noisy_features, \
     get_95th_percentile, undersample_bf, undersample_space, sample_paths
-from bff_positioning.models import CNN, LSTM, TCN, score_predictions
+from bff_positioning.models import CNN, LSTM, TCN
+from bff_positioning.models.metrics import score_predictions
 
 
 def main():
@@ -53,7 +54,7 @@ def main():
             "unless the code for the path creation is updated"
         features, labels = undersample_space(features, labels, data_parameters["undersample_space"])
 
-    # Initializes the model and prepares it for training
+    # Initializes the model and prepares it for testing
     logging.info("Initializing the model (type = %s)...", experiment_settings["model_type"].lower())
     if experiment_settings["model_type"].lower() == "cnn":
         ml_parameters["input_type"] = "float"

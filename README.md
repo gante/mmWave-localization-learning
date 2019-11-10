@@ -1,7 +1,7 @@
 # Beamformed Fingerprint Learning
 
 
-[Last major update: 10-Sep-2019 (Code updated and converted into Python package)]
+[Last major update: 10-Nov-2019 (Added tools to evaluate power consumption on an Nvidia Jetson)]
 
 
 A ML based algorithm that enables accurate positioning from mmWave transmissions - with and without tracking.
@@ -23,6 +23,7 @@ A ML based algorithm that enables accurate positioning from mmWave transmissions
    - [Configuration](#configuration)
    - [Tracking](#tracking)
    - [Running an Experiment](#running-an-experiment)
+   - [Evaluate performance on an Nvidia Jetson](#evaluate-performance-on-an-nvidia-jetson)
 5. [License](#license)
 6. [Acknowledgments](#acknowledgments)
 
@@ -61,6 +62,9 @@ The image shown at the top contains the simulated results for the average error 
 is the red triangle at the center of the image, and most of the solid yellow shapes are buildings, it is possible to
 confirm that **being in a NLOS position is not a constraint for the proposed system**. It is able to provide an estimative for
 every position that has mmWave signal.
+
+This repository also contains tools to evaluate the model performance on a low-power embedded system (Nvidia Jetson TX2),
+which demonstrates the low energy requirements of this solution (\< 10 mJ per position estimate).
 
 For more information, refer to [papers](#papers) section of this README file. If you find any issue, please contact me
 (joao.gante@tecnico.ulisboa.pt).
@@ -116,6 +120,7 @@ To ensure a smooth process, please ensure you have the following requirements.
 **Software**
 - Python 3.x
 - CUDA 10.0 (for TensorFlow)
+- Tensorflow 1.14
 
 ### Installation
 
@@ -181,6 +186,31 @@ For the settings defined in `examples/tcn_experiment.yaml`, the aforementioned s
 *Unfortunatelly, the archaic tool I built for that is written in C, and requires extra steps (see instructions [here](/parsing)).*
 *The `final_table` file, available in the link to the used data, contains the output of that parsing for a sampling frequency of 20MHz.*
 *Let me know if you require aid here.*
+
+
+### Evaluate performance on an Nvidia Jetson
+
+If you wish to evaluate the performance (power consumption and throughput) of a model on an embedded system,
+this sub-section is for you. The tools in this sub-section were designed for this repository, but can easily be
+modified to work with any TF model on an Nvidia Jetson TX2 device.
+
+Assuming you have copied your experiment configuration file to `/path/to/config.yaml`, and that the corresponding
+trained model is in the folder pointed by the aforementioned file, you can evaluate the model performance by running:
+
+```
+sudo python3 bin/jetson_performance.py /path/to/config.yaml
+```
+
+<p align="center">
+  <img src="visualization/repo_images/jetson.PNG" width="480"/>
+</p>
+
+The script will print throughput-related information to the screen (right part of the image), and the power-related data
+will be stored to `$HOME/monitor_results.txt` (left part of the image). It is important that you run this
+script with `sudo`, as it might not be able to use the device GPU otherwise. The image above contains results
+for the model in `examples/cnn_experiment.yaml`, which has an average energy consumption of 1.196 mJ per position
+estimate.
+
 
 
 ## License

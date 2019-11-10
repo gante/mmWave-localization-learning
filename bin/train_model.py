@@ -1,7 +1,7 @@
 """
 Trains a model, acording to the experiment file input
 
-The arguments are loaded from a .yaml file, which is the input argument of this scirpt
+The arguments are loaded from a .yaml file, which is the input argument of this script
 (Instructions to run: `python train_model.py <path to .yaml file>`)
 """
 

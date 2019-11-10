@@ -1,7 +1,6 @@
 numpy
 sklearn
 tensorflow-gpu==1.14
-keras-rectified-adam
 matplotlib
 tqdm
-yaml
+pyyaml
