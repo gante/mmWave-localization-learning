@@ -3,7 +3,7 @@
 
 # defines duration of measurement, interval of measurement (both in seconds)
 # and the measureable rails
-outfile=$HOME/monitor_results.txt
+outfile="$HOME/monitor_results.txt"
 duration=30
 interval=1
 RAILS=("VDD_IN /sys/bus/i2c/drivers/ina3221x/0-0041/iio:device1/in_power0_input"
