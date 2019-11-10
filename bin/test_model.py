@@ -15,7 +15,8 @@ import numpy as np
 
 from bff_positioning.data import Preprocessor, PathCreator, create_noisy_features, \
     get_95th_percentile, undersample_bf, undersample_space, sample_paths
-from bff_positioning.models import CNN, LSTM, TCN, score_predictions
+from bff_positioning.models import CNN, LSTM, TCN
+from bff_positioning.models.metrics import score_predictions
 
 
 def main():
