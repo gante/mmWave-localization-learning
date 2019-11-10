@@ -10,21 +10,24 @@ The arguments are loaded from a .yaml file, which is the input argument of this 
 import os
 import sys
 import time
+import subprocess
+from pathlib import Path
 import logging
 import yaml
+import numpy as np
+from tqdm import tqdm
 
 from bff_positioning.models import CNN, LSTM, TCN
 
-
-# For more details, check the "Thermal Design Guide" provided by Nvidia
-GPU_RAIL = ("VDD_SYS_GPU", "/sys/bus/i2c/drivers/ina3221x/0-0040/iio:device0/in_power0_input")
+# 32 = batch size; total samples >> batch size, to avoid cached results
 TEST_SAMPLES = 32 * 64
+# Must be enough to keep the GPU going for at least 1 minute (30 sec warm up, 30 sec measurement)
+LOOP_SIZE = 100
+MONITOR_RESULTS = os.path.expanduser("~/monitor_results.txt")
 
 
 def main():
     """Main block of code, which runs the performance evaluation"""
-
-    start = time.time()
     logging.basicConfig(level="INFO")
 
     # Load the .yaml data
@@ -60,15 +63,40 @@ def main():
     experiment_name = os.path.basename(sys.argv[1]).split('.')[0]
     model.load(model_name=experiment_name)
 
-    # To do:
-    # create random samples
-    # loops predictions over random samples (100 times), printing power and time
-    # print final results (total time, total samples, avg throughput, avg power, energy per sample)
 
-    # Prints elapsed time
+    # Creates dummy input data, prepares the monitor subprocess
+    features_dummy = np.random.random_sample(tuple([TEST_SAMPLES] + model.input_shape))
+    # monitor path, relative to this file: ../utils/jetson_power_monitor.sh
+    jetson_monitor_path = os.path.join(
+        Path(__file__).parent.parent.absolute(), # parent x2 to get ".."
+        "utils",
+        "jetson_power_monitor.sh"
+    )
+    subprocess.run(["chmod +x " + jetson_monitor_path])
+    assert not os.path.exists(MONITOR_RESULTS), "A monitor results file ({}) already exists. "\
+        "Please delete or move it, and run this script again".format(MONITOR_RESULTS)
+
+    # Prediction loop
+    start = time.time()
+    monitor_launched = False
+    for i in tqdm(range(LOOP_SIZE)):
+        if i > LOOP_SIZE/2 and not monitor_launched:
+            subprocess.Popen([jetson_monitor_path])
+            monitor_launched = True
+        model.predict(features_dummy)
+
+    # Checks if the monitor file was created
+    assert os.path.exists(MONITOR_RESULTS), "The monitor didn't finish running, which means "\
+        "the prediction is too short. Please increase `LOOP_SIZE`."
+
+    # Prints prediction time
     end = time.time()
     exec_time = (end-start)
-    logging.info("Total execution time: %.5E seconds", exec_time)
+    logging.info("Total prediction time: %.5E seconds", exec_time)
+    logging.info("Samples predicted: %s", TEST_SAMPLES)
+    samples_per_sec = TEST_SAMPLES/exec_time
+    logging.info("Samples predicted per second: %s", samples_per_sec)
+    logging.info("Samples predicted during monitoring: %s", samples_per_sec*30.)
 
 
 if __name__ == '__main__':
