@@ -80,24 +80,22 @@ def main():
         "Please delete or move it, and run this script again".format(MONITOR_RESULTS)
 
     # Prediction loop
-    start = time.time()
-    monitor_launched = False
     for i in tqdm(range(LOOP_SIZE)):
-        if i > LOOP_SIZE/2 and not monitor_launched:
+        if i == np.floor(LOOP_SIZE/2):
             subprocess.Popen([jetson_monitor_path])
-            monitor_launched = True
+            start = time.time()
         model.predict(features_dummy)
 
     # Checks if the monitor file was created
+    end = time.time()
     assert os.path.exists(MONITOR_RESULTS), "The monitor didn't finish running, which means "\
         "the prediction is too short. Please increase `LOOP_SIZE`."
+    logging.info("Power-related information stored in %s", MONITOR_RESULTS)
 
     # Prints prediction time
-    end = time.time()
     exec_time = (end-start)
-    logging.info("Total prediction time: %.5E seconds", exec_time)
-    logging.info("Samples predicted: %s", TEST_SAMPLES*LOOP_SIZE)
-    samples_per_sec = TEST_SAMPLES*LOOP_SIZE/exec_time
+    logging.info("Total monitored prediction time: %.5E seconds", exec_time)
+    samples_per_sec = TEST_SAMPLES*np.floor(LOOP_SIZE/2)/exec_time
     logging.info("Samples predicted per second: %s", samples_per_sec)
     logging.info("Samples predicted during monitoring: %s", samples_per_sec*30.)
 
