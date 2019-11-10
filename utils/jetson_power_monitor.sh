@@ -28,9 +28,9 @@ while [ $(date '+%s') -le $end_time ]; do
  sleep $interval
 done
 
-# prints the results
-echo "RAIL,POWER_AVG" >> outfile
+# prints the results to $outfile
+echo "RAIL,POWER_AVG" >> $outfile
 for ((i = 0; i < ${#RAILS[@]}; i++)); do
  pwr_avg=$((${pwr_sum[$i]} / ${pwr_count[$i]}))
- echo "${name[$i]},$pwr_avg" >> outfile
+ echo "${name[$i]},$pwr_avg" >> $outfile
 done
