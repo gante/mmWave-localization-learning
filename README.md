@@ -206,10 +206,10 @@ sudo python3 bin/jetson_performance.py /path/to/config.yaml
 </p>
 
 The script will print throughput-related information to the screen (right part of the image), and the power-related data
-will be stored to `$HOME/monitor_results.txt` (left part of the image). It is important that you run this
-script with `sudo`, as it might not be able to use the device GPU otherwise. The image above contains results
-for the model in `examples/cnn_experiment.yaml`, which has an average energy consumption of 1.196 mJ per position
-estimate.
+will be stored to `$HOME/monitor_results.txt` (left part of the image, where the values depict power in mW). 
+It is important that you run this script with `sudo`, as it might not be able to use the device GPU otherwise. 
+The image above contains results for the model in `examples/cnn_experiment.yaml`, which has an average energy 
+consumption of 1.196 mJ per position estimate.
 
 
 
