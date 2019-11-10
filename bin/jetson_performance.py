@@ -4,7 +4,7 @@ Assumes that the model folder has been copied to a local folder on the board, an
 evaluates it by injecting random input data.
 
 The arguments are loaded from a .yaml file, which is the input argument of this script
-(Instructions to run: `python jetson_performance.py <path to .yaml file>`)
+(Instructions to run: `sudo python jetson_performance.py <path to .yaml file>`)
 """
 
 import os
@@ -28,7 +28,10 @@ MONITOR_RESULTS = os.path.expanduser("~/monitor_results.txt")
 
 def main():
     """Main block of code, which runs the performance evaluation"""
+
     logging.basicConfig(level="INFO")
+    logging.warning("This script should be run with SUDO on a jetson device! "
+        "(CUDA might not be accessible otherwise)")
 
     # Load the .yaml data
     assert len(sys.argv) == 2, "Exactly one experiment configuration file must be "\
@@ -68,11 +71,11 @@ def main():
     features_dummy = np.random.random_sample(tuple([TEST_SAMPLES] + model.input_shape))
     # monitor path, relative to this file: ../utils/jetson_power_monitor.sh
     jetson_monitor_path = os.path.join(
-        Path(__file__).parent.parent.absolute(), # parent x2 to get ".."
+        str(Path(__file__).parent.parent.absolute()), # parent x2 to get ".."
         "utils",
         "jetson_power_monitor.sh"
     )
-    subprocess.run(["chmod +x " + jetson_monitor_path])
+    subprocess.run(["chmod", "+x", jetson_monitor_path])
     assert not os.path.exists(MONITOR_RESULTS), "A monitor results file ({}) already exists. "\
         "Please delete or move it, and run this script again".format(MONITOR_RESULTS)
 
@@ -93,8 +96,8 @@ def main():
     end = time.time()
     exec_time = (end-start)
     logging.info("Total prediction time: %.5E seconds", exec_time)
-    logging.info("Samples predicted: %s", TEST_SAMPLES)
-    samples_per_sec = TEST_SAMPLES/exec_time
+    logging.info("Samples predicted: %s", TEST_SAMPLES*LOOP_SIZE)
+    samples_per_sec = TEST_SAMPLES*LOOP_SIZE/exec_time
     logging.info("Samples predicted per second: %s", samples_per_sec)
     logging.info("Samples predicted during monitoring: %s", samples_per_sec*30.)
 
