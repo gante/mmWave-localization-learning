@@ -32,5 +32,5 @@ done
 echo "RAIL,POWER_AVG" >> outfile
 for ((i = 0; i < ${#RAILS[@]}; i++)); do
  pwr_avg=$((${pwr_sum[$i]} / ${pwr_count[$i]}))
- echo "${name[$i]},$pwr_avg" >>
+ echo "${name[$i]},$pwr_avg" >> outfile
 done
