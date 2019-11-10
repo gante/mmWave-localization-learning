@@ -6,15 +6,10 @@ import os
 import logging
 import numpy as np
 from tqdm import tqdm
-from sklearn.utils import shuffle
-import sklearn.metrics as metrics
 
 import tensorflow as tf
-from keras_radam.training import RAdamOptimizer
 
 from .layer_functions import add_linear_layer
-
-SCORE_TYPES = ['accuracy', 'f1_score', 'mean_square_error', 'euclidean_distance']
 
 
 # -------------------------------------------------------------------------------------------------
@@ -180,6 +175,9 @@ class BaseModel():
         :param X: numpy array with the features
         :param Y: numpy array with the labels
         """
+        #local import to avoid issues in nvidia jetson <-> sklearn
+        from sklearn.utils import shuffle
+
         assert X.shape[0] == Y.shape[0], "X and Y have a different number of samples!"
         self.current_epoch += 1
         max_batches = int(np.ceil(X.shape[0] / self.batch_size))
@@ -210,6 +208,9 @@ class BaseModel():
         :param y_pred: model predictions, defaults to None
         :returns: boolean indicating whether the model should keep training, validation score
         """
+        #local import to avoid issues in nvidia jetson <-> sklearn
+        from .metrics import score_predictions
+
         keep_training = True
         val_score = None
 
@@ -364,11 +365,9 @@ class BaseModel():
             return tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
         elif self.optimizer_type == "NADAM":
             return tf.contrib.opt.NadamOptimizer(learning_rate=self.learning_rate_var)
-        elif self.optimizer_type == "RADAM":
-            return RAdamOptimizer(learning_rate=self.learning_rate_var)
         else:
             raise ValueError("{} is not a supported optimizer type. Supported optimizer types: "
-                "ADAM, NADAM, RADAM.".format(self.optimizer_type))
+                "ADAM, NADAM.".format(self.optimizer_type))
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: misc
@@ -439,26 +438,3 @@ class BaseModel():
         """ Default function to close the session
         """
         self.session.close()
-
-
-def score_predictions(y_true, y_pred, score_type):
-    """ Scores the model predictions against the ground truth, given the score type
-
-    :param y_true: ground truth
-    :param y_pred: model predictions
-    :param score_time: the type of score
-    :retuns: the predictions' score
-    """
-    score = None
-    if score_type not in SCORE_TYPES:
-        raise ValueError("{} is not a valid score type. Implemented score types: {}".format(
-            score_type, SCORE_TYPES))
-    if score_type == 'accuracy':
-        score = metrics.accuracy_score(y_true, y_pred)
-    elif score_type == 'f1_score':
-        score = metrics.f1_score(y_true, y_pred)
-    elif score_type == 'mean_square_error':
-        score = metrics.mean_squared_error(y_true, y_pred)
-    elif score_type == 'euclidean_distance':
-        score = np.mean(np.sqrt(np.sum(np.square(y_true - y_pred), 1)))
-    return score
