@@ -1,14 +1,16 @@
 # Beamformed Fingerprint Learning
 
 
-[Last major update: 10-Nov-2019 (Added tools to evaluate power consumption on an Nvidia Jetson)]
+[Last major update: 03-May-2020 (Added a new journal regarding energy efficiency)]
 
 
-A ML based algorithm that enables accurate positioning from mmWave transmissions - with and without tracking.
+An ML-based algorithm that enables energy efficient accurate positioning from mmWave transmissions - with and without tracking.
 
 <p align="center">
-  <img src="visualization/repo_images/error_vs_position.PNG" width="480"/>
+  <img src="visualization/repo_images/error_vs_position.PNG" width="300"/>
+  <img src="visualization/repo_images/energy.png" width="321"/>
 </p>
+
 
 ### Table of Contents
 1. [Background](#background)
@@ -33,11 +35,7 @@ A ML based algorithm that enables accurate positioning from mmWave transmissions
 
 ## Background
 
-With **5G millimeter wave wireless communications**, the resulting radiation reflects on most visible
-objects, creating rich multipath environments, as depicted in the simulation below.
-The radiation is thus significantly shaped by the obstacles
-it interacts with, carrying latent information regarding the relative positions of the transmitter, the
-obstacles, and the mobile receiver.
+With **5G millimeter wave wireless communications**, the resulting radiation reflects on most visible objects, creating rich multipath environments, as depicted in the simulation below. The radiation is thus significantly shaped by the obstacles it interacts with, carrying latent information regarding the relative positions of the transmitter, the obstacles, and the mobile receiver.
 
 
 <p align="center">
@@ -45,29 +43,20 @@ obstacles, and the mobile receiver.
 </p>
 
 
-In this work, the creation of **beamformed fingerprints** is achieved
-through a pre-established codebook of beamforming patterns transmitted by a **single base station**.
-Making use of the aforementioned hidden information, deep learning techniques are employed to
-convert the received beamformed fingerprints (see examples below) into a mobile device’s position.
-Average errors of down to **3.30/1.78 meters (non-tracking/tracking)** are obtained
-on realistic outdoor scenarios, containing **mostly non-line-of-sight positions**, making it a very competitive
-and promising alternative for **outdoor positioning**.
+In this work, the creation of **beamformed fingerprints** is achieved through a pre-established codebook of beamforming patterns transmitted by a **single base station**. Making use of the aforementioned hidden information, deep learning techniques are employed to convert the received beamformed fingerprints (see examples below) into a mobile device’s position. Average errors of down to **3.30/1.78 meters (non-tracking/tracking)** are obtained on realistic outdoor scenarios, containing **mostly non-line-of-sight positions**.
+
+Moreover, it was shown that this system is **47x** and **85x** more energy efficient than conventional A-GPS low-power implementations (for continuous and sporadic position fixes, respectively), making it a very competitive and promising alternative for **outdoor positioning**.
 
 
 <p align="center">
   <img src="visualization/repo_images/bff_examples.PNG" width="480"/>
 </p>
 
-The image shown at the top contains the simulated results for the average error per covered position. Given that the transmitter
-is the red triangle at the center of the image, and most of the solid yellow shapes are buildings, it is possible to
-confirm that **being in a NLOS position is not a constraint for the proposed system**. It is able to provide an estimative for
-every position that has mmWave signal.
+The image shown at the top (left) contains the simulated results for the average error per covered position. Given that the transmitter is the red triangle at the center of the image, and most of the solid yellow shapes are buildings, it is possible to confirm that **being in a NLOS position is not a constraint for the proposed system**. It is able to provide an estimative for every position that has mmWave signal.
 
-This repository also contains tools to evaluate the model performance on a low-power embedded system (Nvidia Jetson TX2),
-which demonstrates the low energy requirements of this solution (\< 10 mJ per position estimate).
+This repository also contains tools to evaluate the model performance on a low-power embedded system (Nvidia Jetson TX2), which demonstrates the low energy requirements of this solution - \< 10 mJ per position estimate, if the position inference is done at the mobile device. The comparison results are also observable at the top (right).
 
-For more information, refer to [papers](#papers) section of this README file. If you find any issue, please contact me
-(joao.gante@tecnico.ulisboa.pt).
+For more information, refer to [papers](#papers) section of this README file. If you find any issue, please contact me (joao.gante@tecnico.ulisboa.pt).
 
 
 
@@ -76,31 +65,50 @@ For more information, refer to [papers](#papers) section of this README file. If
 
 ### Citation
 
-The main citation for this work is the following:
+There are two main citations for this work.
+
+By default, consider using the following:
 
 ```
 @Article{Gante2019,
-    author="Gante, Jo{\~a}o and Falc{\~a}o, Gabriel and Sousa, Leonel",
-    title="{Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G}",
-    journal="Neural Processing Letters",
-    year="2019",
-    month="Aug",
-    day="13",
-    issn="1573-773X",
-    doi="10.1007/s11063-019-10073-1",
-    url="https://doi.org/10.1007/s11063-019-10073-1"
+  author="Gante, Jo{\~a}o and Falc{\~a}o, Gabriel and Sousa, Leonel",
+  title="{Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G}",
+  journal="Neural Processing Letters",
+  year="2019",
+  month="Aug",
+  day="13",
+  issn="1573-773X",
+  doi="10.1007/s11063-019-10073-1",
+  url="https://doi.org/10.1007/s11063-019-10073-1"
 }
 ```
+
+If you are concerned about the energy efficiency of positioning methods or ML-enabled mobile applications, please use:
+
+```
+@ARTICLE{Gante2020,
+  author={J. {Gante} and L. {Sousa} and G. {Falcao}},
+  journal={IEEE Journal on Emerging and Selected Topics in Circuits and Systems},
+  title={Dethroning GPS: Low-Power Accurate 5G Positioning Systems using Machine Learning},
+  year={2020},
+  volume={},
+  number={},
+  pages={1-1},
+}
+```
+
 
 ### List of Papers
 
 (From newest to oldest)
 
-"Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G" --- Neural Processing Letters ([link](https://rdcu.be/bOOpk) -- a post-peer-review, pre-copyedit version is also available [here](https://drive.google.com/open?id=19P7Ebg80pVqyHNkfPDQNweozl4k4S6RC))
+- "Dethroning GPS: Low-Power Accurate 5G Positioning Systems using Machine Learning" --- IEEE JETCAS ([ieeexplore](https://ieeexplore.ieee.org/document/9080126) -- a copy is also available [here](https://drive.google.com/open?id=1fUZQeUSIYGUNn7S7aXLiNUhF0OOc04_M))
 
-"Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 ([ieeexplore](https://ieeexplore.ieee.org/document/8683782))
+- "Deep Learning Architectures for Accurate Millimeter Wave Positioning in 5G" --- Neural Processing Letters ([link](https://rdcu.be/bOOpk) -- a post-peer-review, pre-copyedit version is also available [here](https://drive.google.com/open?id=19P7Ebg80pVqyHNkfPDQNweozl4k4S6RC))
 
-"Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 ([ieeexplore](https://ieeexplore.ieee.org/document/8690987) , also on [arxiv](https://arxiv.org/abs/1804.04112))
+- "Enhancing Beamformed Fingerprint Outdoor Positioning with Hierarchical Convolutional Neural Networks" --- ICASSP 2019 ([ieeexplore](https://ieeexplore.ieee.org/document/8683782))
+
+- "Beamformed Fingerprint Learning for Accurate Millimeter Wave Positioning" --- VTC Fall 2018 ([ieeexplore](https://ieeexplore.ieee.org/document/8690987) , also on [arxiv](https://arxiv.org/abs/1804.04112))
 
 
 
@@ -115,7 +123,7 @@ To ensure a smooth process, please ensure you have the following requirements.
 
 **Hardware**
 - Nvidia GPU with Compute Capability 3.5 or higher
-- at least 16GB of RAM
+- at least 16GB of RAM (32GB recommended)
 
 **Software**
 - Python 3.x
@@ -206,9 +214,9 @@ sudo python3 bin/jetson_performance.py /path/to/config.yaml
 </p>
 
 The script will print throughput-related information to the screen (right part of the image), and the power-related data
-will be stored to `$HOME/monitor_results.txt` (left part of the image, where the values depict power in mW). 
-It is important that you run this script with `sudo`, as it might not be able to use the device GPU otherwise. 
-The image above contains results for the model in `examples/cnn_experiment.yaml`, which has an average energy 
+will be stored to `$HOME/monitor_results.txt` (left part of the image, where the values depict power in mW).
+It is important that you run this script with `sudo`, as it might not be able to use the device GPU otherwise.
+The image above contains results for the model in `examples/cnn_experiment.yaml`, which has an average energy
 consumption of 1.196 mJ per position estimate.
 
 
