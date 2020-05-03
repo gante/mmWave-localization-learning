@@ -7,8 +7,8 @@
 An ML-based algorithm that enables energy efficient accurate positioning from mmWave transmissions - with and without tracking.
 
 <p align="center">
-  <img src="visualization/repo_images/error_vs_position.PNG" width="300"/>
-  <img src="visualization/repo_images/energy.png" width="321"/>
+  <img src="visualization/repo_images/error_vs_position.PNG" width="425"/>
+  <img src="visualization/repo_images/energy.png" width="400"/>
 </p>
 
 
