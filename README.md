@@ -88,12 +88,12 @@ If you are concerned about the energy efficiency of positioning methods or ML-en
 ```
 @ARTICLE{Gante2020,
   author={J. {Gante} and L. {Sousa} and G. {Falcao}},
-  journal={IEEE Journal on Emerging and Selected Topics in Circuits and Systems},
-  title={Dethroning GPS: Low-Power Accurate 5G Positioning Systems using Machine Learning},
+  journal={IEEE Journal on Emerging and Selected Topics in Circuits and Systems}, 
+  title={Dethroning GPS: Low-Power Accurate 5G Positioning Systems Using Machine Learning}, 
   year={2020},
-  volume={},
-  number={},
-  pages={1-1},
+  volume={10},
+  number={2},
+  pages={240-252},
 }
 ```
 
