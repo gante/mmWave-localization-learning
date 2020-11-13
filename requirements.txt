@@ -1,6 +1,6 @@
 numpy
 sklearn
-tensorflow-gpu==1.14
+tensorflow-gpu==2.3.1
 matplotlib
 tqdm
 pyyaml
