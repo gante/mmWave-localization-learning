@@ -1,6 +1,6 @@
 """ Script to plot the cumulative histogram for the predictions error
 
-(Instructions to run: `python plot_histogram.py <path to .yaml file>`)
+(Instructions to run: `python path/to/plot_histogram.py <path to .yaml file>`)
 """
 
 #pylint: disable=wrong-import-position

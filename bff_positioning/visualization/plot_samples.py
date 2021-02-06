@@ -1,6 +1,6 @@
 """ Script to plot random data samples (the beamformed fingerprints)
 
-(Instructions to run: `python plot_samples.py <path to .yaml file>`)
+(Instructions to run: `python path/to/plot_samples.py <path to .yaml file>`)
 """
 
 #pylint: disable=wrong-import-position

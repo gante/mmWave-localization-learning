@@ -7,7 +7,7 @@ description: Parameters used to train a CNN for the BFF problem
 # themselves
 data_parameters:
     input_file: '../bff_data/final_table'
-    preprocessed_file: '../bff_data/preprocessed_dataset'
+    preprocessed_file: '../bff_data/preprocessed_dataset.pkl'
     max_time: 6                 #in microseconds
     sample_freq: 20             #in MHz
     beamformings: 32
@@ -31,7 +31,7 @@ experiment_settings:
     scaler_type: "binarizer"
     model_type: "cnn"
     tests_per_position: 30
-    predictions_file: "model_predictions"
+    predictions_file: "model_predictions.pkl"
 
 
 # -------------------------------------------------------------------------------------------------
@@ -47,10 +47,11 @@ ml_parameters:
     model_folder: "../experiments_results/cnn/"
 
     # basic model hyperparams
-    optimizer_type: "NADAM"
+    optimizer_type: "ADAM"
     batch_size: 64
     batch_size_inference: 256
     dropout: 0.01
+    mc_dropout: False
     max_epochs: 1000
     early_stopping: 50          # Stops training after these epochs without improvement on val set
     fc_layers: 12

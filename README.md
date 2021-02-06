@@ -1,14 +1,10 @@
 # Beamformed Fingerprint Learning
 
-
-[Last major update: 03-May-2020 (Added a new journal regarding energy efficiency)]
-
-
 An ML-based algorithm that enables energy efficient accurate positioning from mmWave transmissions - with and without tracking.
 
 <p align="center">
-  <img src="visualization/repo_images/error_vs_position.PNG" width="400"/>
-  <img src="visualization/repo_images/energy.png" width="425"/>
+  <img src="extra/repo_images/error_vs_position.PNG" width="400"/>
+  <img src="extra/repo_images/energy.png" width="425"/>
 </p>
 
 
@@ -30,16 +26,13 @@ An ML-based algorithm that enables energy efficient accurate positioning from mm
 6. [Acknowledgments](#acknowledgments)
 
 
-
-
-
 ## Background
 
 With **5G millimeter wave wireless communications**, the resulting radiation reflects on most visible objects, creating rich multipath environments, as depicted in the simulation below. The radiation is thus significantly shaped by the obstacles it interacts with, carrying latent information regarding the relative positions of the transmitter, the obstacles, and the mobile receiver.
 
 
 <p align="center">
-  <img src="visualization/repo_images/propagation.PNG" width="400"/>
+  <img src="extra/repo_images/propagation.PNG" width="400"/>
 </p>
 
 
@@ -49,7 +42,7 @@ Moreover, it was shown that this system is **47x** and **85x** more energy effic
 
 
 <p align="center">
-  <img src="visualization/repo_images/bff_examples.PNG" width="480"/>
+  <img src="extra/repo_images/bff_examples.PNG" width="480"/>
 </p>
 
 The image shown at the top (left) contains the simulated results for the average error per covered position. Given that the transmitter is the red triangle at the center of the image, and most of the solid yellow shapes are buildings, it is possible to confirm that **being in a NLOS position is not a constraint for the proposed system**. It is able to provide an estimative for every position that has mmWave signal.
@@ -59,10 +52,7 @@ This repository also contains tools to evaluate the model performance on a low-p
 For more information, refer to [papers](#papers) section of this README file. If you find any issue, please contact me (joao.gante@tecnico.ulisboa.pt).
 
 
-
-
 ## Papers
-
 ### Citation
 
 There are two main citations for this work.
@@ -88,8 +78,8 @@ If you are concerned about the energy efficiency of positioning methods or ML-en
 ```
 @ARTICLE{Gante2020,
   author={J. {Gante} and L. {Sousa} and G. {Falcao}},
-  journal={IEEE Journal on Emerging and Selected Topics in Circuits and Systems}, 
-  title={Dethroning GPS: Low-Power Accurate 5G Positioning Systems Using Machine Learning}, 
+  journal={IEEE Journal on Emerging and Selected Topics in Circuits and Systems},
+  title={Dethroning GPS: Low-Power Accurate 5G Positioning Systems Using Machine Learning},
   year={2020},
   volume={10},
   number={2},
@@ -112,10 +102,10 @@ If you are concerned about the energy efficiency of positioning methods or ML-en
 
 
 
-
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+
 
 ### Before Installing
 
@@ -126,9 +116,9 @@ To ensure a smooth process, please ensure you have the following requirements.
 - at least 16GB of RAM (32GB recommended)
 
 **Software**
-- Python 3.x
-- CUDA 10.0 (for TensorFlow)
+- Python 3.6 or higher
 - Tensorflow 1.14
+- CUDA 10.0 (for TensorFlow 1.14)
 
 ### Installation
 
@@ -148,8 +138,6 @@ The data was generated using the [Wireless InSite ray-tracing simulator](https:/
 The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Management Center](https://goo.gl/maps/xrqvT9VS59K2). If you would like to have the 3D files for this or other sections of NYC, feel free to email me.
 
 
-
-
 ## Experiments
 
 ### Configuration
@@ -159,18 +147,19 @@ I recommend the creation of a new configuration file for each experiment, and a 
 These examples can reproduce the results of [this](#citation) paper, and the available options are either self-explainatory,
 or have plenty of comments in the file.
 
+
 ### Tracking
 
-The use of a tracking or a non-tracking dataset is entirely defined by the model architecture, defined in the `model_type` option in the configuration file (`lstm` and `tcn` are the tracking options). A non-tracking dataset will be build from noisy instances of each position's data. On the other hand, the tracking dataset is first built by generating synthetic paths (as seen below), and then drawing noisy instances of the dataset for each position in a path.
+The use of a tracking or a non-tracking dataset is entirely defined by the model architecture, defined in the `model_type` option in the configuration file (`lstm` and `tcn` are the tracking options). A non-tracking dataset will be built from noisy instances of each position's data. On the other hand, the tracking dataset is first built by generating synthetic paths (as seen below), and then drawing noisy instances of the dataset for each position in a path.
 
 <p align="center">
-  <img src="visualization/repo_images/paths.PNG" width="480"/>
+  <img src="extra/repo_images/paths.PNG" width="480"/>
 </p>
+
 
 ### Running an Experiment
 
 Assuming you have set a configuration file in `/path/to/config.yaml`, and the configuration file's `input_file` option contains the path to the downloaded `final_table`, these are the steps to fully run an experiment:
-
 
 ```
 python3 bin/preprocess_dataset.py /path/to/config.yaml
@@ -178,22 +167,21 @@ python3 bin/train_model.py /path/to/config.yaml
 python3 bin/test_model.py /path/to/config.yaml
 ```
 
-The last step ends with the key metrics being printed to your terminal. If you want to visualize additional results, you can use the visualization tools provided [here](/visualization). E.g.:
+The last step ends with the key metrics being printed to your terminal. If you want to visualize additional results, you can use the visualization tools provided [here](/bff_positioning/visualization). E.g.:
 
 ```
-python3 visualization/plot_histogram.py /path/to/config.yaml
+python3 bff_positioning/visualization/plot_histogram.py /path/to/config.yaml
 ```
 
 For the settings defined in `examples/tcn_experiment.yaml`, the aforementioned set of commands should yield the following plot.
 
 <p align="center">
-  <img src="visualization/repo_images/histogram_tracking.PNG" width="480"/>
+  <img src="extra/repo_images/histogram_tracking.PNG" width="480"/>
 </p>
 
 *Note - If different sampling frequencies are desired, the original, text-based data (`CIR32_zip`) must be parsed again.*
-*Unfortunatelly, the archaic tool I built for that is written in C, and requires extra steps (see instructions [here](/parsing)).*
+*Unfortunatelly, the archaic tool I built for that is written in C, and requires extra steps (see instructions [here](/extra/parsing)).*
 *The `final_table` file, available in the link to the used data, contains the output of that parsing for a sampling frequency of 20MHz.*
-*Let me know if you require aid here.*
 
 
 ### Evaluate performance on an Nvidia Jetson
@@ -206,11 +194,11 @@ Assuming you have copied your experiment configuration file to `/path/to/config.
 trained model is in the folder pointed by the aforementioned file, you can evaluate the model performance by running:
 
 ```
-sudo python3 bin/jetson_performance.py /path/to/config.yaml
+sudo python3 extra/jetson/jetson_performance.py /path/to/config.yaml
 ```
 
 <p align="center">
-  <img src="visualization/repo_images/jetson.PNG" width="480"/>
+  <img src="extra/repo_images/jetson.PNG" width="480"/>
 </p>
 
 The script will print throughput-related information to the screen (right part of the image), and the power-related data
@@ -219,11 +207,14 @@ It is important that you run this script with `sudo`, as it might not be able to
 The image above contains results for the model in `examples/cnn_experiment.yaml`, which has an average energy
 consumption of 1.196 mJ per position estimate.
 
+NOTE: The above was working as of commit [6220366](https://github.com/gante/mmWave-localization-learning/commit/6220366084fba85a0bc3dc8b0aff26ce875c0713).
+Meanwhile, I've lost access the machine, and can no longer confirm that the above works with the current code base.
 
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
 
 ## Acknowledgments
 
