@@ -31,7 +31,7 @@ experiment_settings:
     scaler_type: "binarizer"
     model_type: "cnn"
     tests_per_position: 30
-    predictions_file: "model_predictions"
+    predictions_file: "model_predictions.pkl"
 
 
 # -------------------------------------------------------------------------------------------------

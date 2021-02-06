@@ -59,7 +59,7 @@ experiment_settings:
     noise_std: 6                # in dB  [Gaussian noise applied over dB values -> "log-normal"]
     scaler_type: "binarizer"
     model_type: "tcn"
-    predictions_file: "model_predictions"
+    predictions_file: "model_predictions.pkl"
     tests_per_path: 5
     train_sample_fraction: 0.05 # will use this fraction of the train set each "epoch" (check code)
 
