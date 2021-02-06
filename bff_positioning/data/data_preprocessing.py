@@ -240,7 +240,10 @@ class Preprocessor():
             # Local import to avoid messing non-gaphical interfaces
             matplotlib.use('agg')
             import matplotlib.pyplot as plt
-            plt.imshow(np.transpose(to_plot))
+            # Saves image and corresponding data
+            valid_positions_img = np.transpose(to_plot)
+            np.save(os.path.join(target_folder, 'existing_data_points.npy'), valid_positions_img)
+            plt.imshow(valid_positions_img)
             image_locaton = os.path.join(target_folder, 'existing_data_points.pdf')
             plt.savefig(image_locaton)
             logging.info("Done! (Check %s)", image_locaton)

@@ -50,7 +50,6 @@ class BaseModel():
     # - Instead of "train_batch()" with an outer control loop, create a "train_generator()" that
     #   uses generators
     # - Similarly, crate a "predict_generator()"
-    # - Add an MC dropout flag to the predict functions, to enable uncertainty prediction
 
     def __init__(self, model_settings):
 
@@ -77,6 +76,8 @@ class BaseModel():
             if "val_eval_period" in model_settings else 1
         self.dropout = model_settings["dropout"] \
             if "dropout" in model_settings else 0.
+        self.mc_dropout = model_settings["mc_dropout"] \
+            if "mc_dropout" in model_settings else False
         self.fc_layers = model_settings["fc_layers"] \
             if "fc_layers" in model_settings else 0
         self.fc_neurons = model_settings["fc_neurons"] \
@@ -236,6 +237,8 @@ class BaseModel():
         """
         if validation and self.current_epoch % self.val_eval_period != 0:
             return None
+        if self.mc_dropout:
+            logging.info("Attention -- predicting with MC Dropout")
         max_batches = int(np.ceil(X.shape[0] / self.batch_size))
         predictions = []
         for batch_idx in range(max_batches):
@@ -244,7 +247,7 @@ class BaseModel():
             batch_predictions = self.model_output.eval(
                 feed_dict={
                     self.model_input: X[start_batch:end_batch, ...],
-                    self.dropout_var: 0.0,
+                    self.dropout_var: self.dropout if self.mc_dropout else 0.0,
                     self.is_training: False
                 },
                 session=self.session
@@ -363,11 +366,9 @@ class BaseModel():
         """
         if self.optimizer_type == "ADAM":
             return tf.compat.v1.train.AdamOptimizer(learning_rate=self.learning_rate_var)
-        elif self.optimizer_type == "NADAM":
-            return tf.contrib.opt.NadamOptimizer(learning_rate=self.learning_rate_var)
         else:
             raise ValueError("{} is not a supported optimizer type. Supported optimizer types: "
-                "ADAM, NADAM.".format(self.optimizer_type))
+                "ADAM.".format(self.optimizer_type))
 
     # ---------------------------------------------------------------------------------------------
     # Non-interface functions: misc
@@ -381,7 +382,7 @@ class BaseModel():
             os.environ["CUDA_VISIBLE_DEVICES"] = str(target_gpu)
 
     def _prepare_model_for_training(self):
-        """ Self-documenting :D
+        """ Self-documenting
         """
         # Sets the saver and the session
         self.saver = tf.compat.v1.train.Saver()

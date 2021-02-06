@@ -7,7 +7,7 @@ description: Parameters used to train an TCN for the BFF problem
 # themselves
 data_parameters:
     input_file: '../bff_data/final_table'
-    preprocessed_file: '../bff_data/preprocessed_dataset'
+    preprocessed_file: '../bff_data/preprocessed_dataset.pkl'
     max_time: 6                 #in microseconds
     sample_freq: 20             #in MHz
     beamformings: 32
