@@ -69,10 +69,9 @@ def main():
 
     # Creates dummy input data, prepares the monitor subprocess
     features_dummy = np.random.random_sample(tuple([TEST_SAMPLES] + model.input_shape))
-    # monitor path, relative to this file: ../utils/jetson_power_monitor.sh
+    # monitor path, relative to this file: /jetson_power_monitor.sh
     jetson_monitor_path = os.path.join(
-        str(Path(__file__).parent.parent.absolute()), # parent x2 to get ".."
-        "utils",
+        str(Path(__file__).parent.absolute()), # parent to get ".."
         "jetson_power_monitor.sh"
     )
     subprocess.run(["chmod", "+x", jetson_monitor_path])
