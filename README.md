@@ -117,8 +117,8 @@ To ensure a smooth process, please ensure you have the following requirements.
 
 **Software**
 - Python 3.6 or higher
-- Tensorflow 1.14
-- CUDA 10.0 (for TensorFlow 1.14)
+- Tensorflow 2.4
+- CUDA 11.0
 
 ### Installation
 
@@ -207,7 +207,7 @@ It is important that you run this script with `sudo`, as it might not be able to
 The image above contains results for the model in `examples/cnn_experiment.yaml`, which has an average energy
 consumption of 1.196 mJ per position estimate.
 
-NOTE: The above was working as of commit [6220366](https://github.com/gante/mmWave-localization-learning/commit/6220366084fba85a0bc3dc8b0aff26ce875c0713).
+NOTE: The above was working as of commit [6220366](https://github.com/gante/mmWave-localization-learning/commit/6220366084fba85a0bc3dc8b0aff26ce875c0713), using CUDA 10 and TF 1.14.
 Meanwhile, I've lost access the machine, and can no longer confirm that the above works with the current code base.
 
 

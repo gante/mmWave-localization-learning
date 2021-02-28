@@ -1,7 +1,8 @@
 """ Python class depicting a Convolutional Neural Network (CNN).
 """
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from .base_model import BaseModel
 from .layer_functions import add_conv_layer, add_fc_layer
