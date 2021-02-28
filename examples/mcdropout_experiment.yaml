@@ -58,7 +58,7 @@ ml_parameters:
     learning_rate: 0.0001
     learning_rate_decay: 0.995  # Multiplicative term at the end of each epoch
     target_gpu: "0"
-    mc_dropout: 0               # Number of samples for MC Dropout-based uncertainty estimation. 0 to deactivate.
+    mc_dropout: 100             # Number of samples for MC Dropout-based uncertainty estimation. 0 to deactivate.
 
     # architecture specific hyperparams
     conv_layers: 1

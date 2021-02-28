@@ -214,8 +214,13 @@ class BaseModel():
         """
         if validation and self.current_epoch % self.val_eval_period != 0:
             return None
-        if self.mc_dropout:
+
+        # dropout is 0 unless we want to test MC Dropout and we are NOT in the training loop
+        dropout = 0.0
+        if self.mc_dropout and not validation:
             logging.info("Attention -- predicting with MC Dropout")
+            dropout = self.dropout
+
         max_batches = int(np.ceil(X.shape[0] / self.batch_size))
         predictions = []
         for batch_idx in range(max_batches):
@@ -224,7 +229,7 @@ class BaseModel():
             batch_predictions = self.model_output.eval(
                 feed_dict={
                     self.model_input: X[start_batch:end_batch, ...],
-                    self.dropout_var: self.dropout if self.mc_dropout else 0.0,
+                    self.dropout_var: dropout,
                     self.is_training: False
                 },
                 session=self.session
