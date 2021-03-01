@@ -76,15 +76,21 @@ def main():
     model.load(model_name=experiment_name)
 
     # Prediction loop
-    if "tests_per_position" in experiment_settings:
+    mc_dropout_samples = ml_parameters.get("mc_dropout", 0)
+    if mc_dropout_samples:
+        logging.info("Evaluation mode: MC Dropout sampling")
+        tests_per_input = 1
+    elif "tests_per_position" in experiment_settings:
+        logging.info("Evaluation mode: Single-point position estimates")
         tests_per_input = experiment_settings["tests_per_position"]
     else:
-        tests_per_input = experiment_settings["tests_per_path"] * 10
+        logging.info("Evaluation mode: Path-based position estimates")
         logging.info("Note - each set of paths will be split into 10 sub-sets, for easier RAM"
             "management -- that's why you'll see 10x test sets in the next logging messages.")
+        tests_per_input = experiment_settings["tests_per_path"] * 10
 
-    y_true = None
-    y_pred = None
+    y_true = []
+    y_pred = []
     for set_idx in range(tests_per_input):
         logging.info("Creating test set %2s out of %2s...", set_idx+1, tests_per_input)
         if path_parameters:
@@ -105,26 +111,42 @@ def main():
                 data_parameters,
             )
         logging.info("Running predictions and storing data...\n")
-        predictions_test = model.predict(features_test)
-        y_true = np.vstack((y_true, labels_test)) if y_true is not None else labels_test
-        y_pred = np.vstack((y_pred, predictions_test)) if y_pred is not None else predictions_test
-        assert labels_test.shape[1] == y_true.shape[1], "The number of dimensions per sample "\
-            "must stay constant!"
-        assert y_true.shape == y_pred.shape, "The predictions and the labels must have the "\
-            "same shape!"
+
+        y_true.append(labels_test)
+        if not mc_dropout_samples: # MC Dropout OFF
+            predictions_test = model.predict(features_test)
+            y_pred.append(predictions_test)
+
+        for sample_rnd in range(mc_dropout_samples): # equivalent to else, MC Dropout ON
+            logging.info("MC Dropout sample round %s out of %s", sample_rnd, mc_dropout_samples)
+            predictions_test = model.predict(features_test)
+            y_pred.append(predictions_test)
+
+    # Stack results and sanity check
+    y_true = np.vstack(y_true)
+    if mc_dropout_samples:
+        y_pred = np.stack(y_pred, axis=2)
+    else:
+        y_pred = np.vstack(y_pred)
+    assert labels_test.shape[0] == y_true.shape[0] == y_pred.shape[0], \
+        "The predictions and the labels must have the same number of examples!"
+    assert labels_test.shape[1] == y_true.shape[1] == y_pred.shape[1], \
+        "The number of dimensions per sample must stay constant!"
 
     # Closes the model, gets the test scores, and stores predictions-labels pairs
     model.close()
-    logging.info("Computing test metrics...")
-    test_score = score_predictions(y_true, y_pred, ml_parameters["validation_metric"])
-    test_score *= data_parameters["pos_grid"][0]
-    test_95_perc = get_95th_percentile(
-        y_true,
-        y_pred,
-        rescale_factor=data_parameters["pos_grid"][0]
-    )
-    logging.info("Average test distance: %.5f m || 95th percentile: %.5f m\n",
-        test_score, test_95_perc)
+    if not mc_dropout_samples: # Doesn't make sense to test MCDropout samples, they underperform :)
+        logging.info("Computing test metrics...")
+        test_score = score_predictions(y_true, y_pred, ml_parameters["validation_metric"])
+        test_score *= data_parameters["pos_grid"][0]
+        test_95_perc = get_95th_percentile(
+            y_true,
+            y_pred,
+            rescale_factor=data_parameters["pos_grid"][0]
+        )
+        logging.info("Average test distance: %.5f m || 95th percentile: %.5f m\n",
+            test_score, test_95_perc)
+
     preditions_file = os.path.join(
         ml_parameters["model_folder"],
         experiment_name + '_' + experiment_settings["predictions_file"]

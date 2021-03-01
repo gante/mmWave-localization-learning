@@ -1,15 +1,13 @@
 """ Script to plot samples from MC Dropout
 
 (Instructions to run: `python path/to/plot_uncertainty.py <path to .yaml file>`)
-
-WORK IN PROGRESS, requires manually saving model data as a numpy array.
-Expected input format: 2D array with MC Dropout samples from the model, 1D array with true position
 """
 
 #pylint: disable=wrong-import-position
 
 import os
 import sys
+import pickle
 import logging
 import yaml
 import numpy as np
@@ -19,7 +17,9 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 
-PLOT_PATH = "uncertainty.pdf"
+N_SAMPLES = 5
+GRID_SIZE = 400
+PLOT_PATH = "uncertainty.jpg"
 
 
 def plot_uncertainty(y_true, y_pred, background_data):
@@ -29,28 +29,26 @@ def plot_uncertainty(y_true, y_pred, background_data):
     :param y_pred: model samples
     :param background_data: numpy array containing the positions with data
     """
+    # Flips y (imshow assumes 0 on top, growing down)
+    y_true[:, 1] = -y_true[:, 1] + GRID_SIZE
+    y_pred[:, 1] = -y_pred[:, 1] + GRID_SIZE
+
     # Plots the background in black and black (white = positions with data)
     plt.imshow(-background_data, cmap='Greys', vmin=-1.0, vmax=0.0, alpha=0.5)
 
     # Plots the MC Dropout samples in blue, with some transparency
-    plt.scatter(x=y_pred[:, 0], y=y_pred[:, 1], c='b', s=2, alpha=0.1)
+    plt.scatter(x=y_pred[:, 0, :], y=y_pred[:, 1, :], c='b', s=2, alpha=0.1)
 
     # Plots the true position in solid red
-    plt.scatter(x=y_true[0], y=y_true[1], c='r', s=5)
+    plt.scatter(x=y_true[:, 0], y=y_true[:, 1], c='r', s=5)
 
     # Saves the plot
-    plt.savefig(PLOT_PATH, format='pdf')
+    plt.savefig(PLOT_PATH)
     logging.info("Plot written to %s", PLOT_PATH)
 
 
 def main():
     """Main block of code, which controls the plotting"""
-
-    # For the final version:
-    # 1 - Make a new script, `sample_model`, to store MC Dropout output data
-    # 2 - Make this script load those samples (copy logic from other plot scripts)
-    # 3 - Pick randomly N positions and store them as basename_X_Y.pdf
-
     logging.basicConfig(level="INFO")
 
     # Load the .yaml data and unpacks it
@@ -61,21 +59,39 @@ def main():
         logging.info("Loading simulation settings from %s", sys.argv[1])
         experiment_config = yaml.load(yaml_config_file)
     data_parameters = experiment_config['data_parameters']
+    experiment_settings = experiment_config['experiment_settings']
+    ml_parameters = experiment_config["ml_parameters"]
 
     background_data_path = os.path.join(
         os.path.split(data_parameters["preprocessed_file"])[0], "existing_data_points.npy"
     )
     background_data = np.load(background_data_path)
 
-    # REPLACE THIS WITH ACTUAL DATA <======================================================================================
-    # (remember that the model has the output range in [0, 1], and it has to be scaled to [0, 400])
-    # 1D array with true position
-    y_true = np.asarray([200, 200])
-    # 2D array with MC Dropout samples from the model
-    y_pred = np.random.normal(loc=200, scale=10, size=(1000, 2))
+    # Loads the predictions
+    logging.info("Loading stored predictions...")
+    experiment_name = os.path.basename(sys.argv[1]).split('.')[0]
+    preditions_file = os.path.join(
+        ml_parameters["model_folder"],
+        experiment_name + '_' + experiment_settings["predictions_file"]
+    )
+    with open(preditions_file, 'rb') as pred_file:
+        y_true, y_pred = pickle.load(pred_file)
+    assert y_true.shape[0] == y_pred.shape[0], \
+        "The loaded variables must have the same number of positions"
+    assert y_true.shape[1] == y_pred.shape[1], \
+        "The loaded variables must have the same physical dimensions!"
+    assert len(y_true.shape) == 2, "The label data should only have two dimensions"
+    assert y_pred.shape[2] > 1, "Not enough MC Dropout samples"
+    logging.info("%s predictions loaded\n", y_true.shape[0])
+
+    # Pick a random positions
+    selected_positions = np.sort(np.random.randint(low=0, high=y_true.shape[0], size=N_SAMPLES))
+    y_true_position = y_true[selected_positions, :] * GRID_SIZE
+    y_pred_position = y_pred[selected_positions, ...] * GRID_SIZE
+    logging.info("Selected positions (labels): \n%s", y_true_position)
 
     # Plots the uncertainty on the map
-    plot_uncertainty(y_true, y_pred, background_data)
+    plot_uncertainty(y_true_position, y_pred_position, background_data)
 
 
 if __name__ == '__main__':
