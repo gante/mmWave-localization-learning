@@ -11,7 +11,9 @@ import time
 import logging
 import pickle
 import yaml
+
 import numpy as np
+from tqdm import tqdm
 
 from bff_positioning.data import Preprocessor, PathCreator, create_noisy_features, \
     get_95th_percentile, undersample_bf, undersample_space, sample_paths
@@ -117,8 +119,7 @@ def main():
             predictions_test = model.predict(features_test)
             y_pred.append(predictions_test)
 
-        for sample_rnd in range(mc_dropout_samples): # equivalent to else, MC Dropout ON
-            logging.info("MC Dropout sample round %s out of %s", sample_rnd, mc_dropout_samples)
+        for sample_rnd in tqdm(range(mc_dropout_samples)): # equivalent to else, MC Dropout ON
             predictions_test = model.predict(features_test)
             y_pred.append(predictions_test)
 

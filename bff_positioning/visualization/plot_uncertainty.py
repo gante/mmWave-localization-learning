@@ -17,7 +17,7 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 
-N_SAMPLES = 5
+N_SAMPLES = 20
 GRID_SIZE = 400
 PLOT_PATH = "uncertainty.jpg"
 
@@ -37,13 +37,13 @@ def plot_uncertainty(y_true, y_pred, background_data):
     plt.imshow(-background_data, cmap='Greys', vmin=-1.0, vmax=0.0, alpha=0.5)
 
     # Plots the MC Dropout samples in blue, with some transparency
-    plt.scatter(x=y_pred[:, 0, :], y=y_pred[:, 1, :], c='b', s=2, alpha=0.1)
+    plt.scatter(x=y_pred[:, 0, :], y=y_pred[:, 1, :], c='b', s=2, alpha=0.01)
 
     # Plots the true position in solid red
     plt.scatter(x=y_true[:, 0], y=y_true[:, 1], c='r', s=5)
 
     # Saves the plot
-    plt.savefig(PLOT_PATH)
+    plt.savefig(PLOT_PATH, dpi=300)
     logging.info("Plot written to %s", PLOT_PATH)
 
 
