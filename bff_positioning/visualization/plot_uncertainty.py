@@ -17,8 +17,9 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
 
+N_SAMPLES = 5
 GRID_SIZE = 400
-PLOT_PATH = "uncertainty.png"
+PLOT_PATH = "uncertainty.jpg"
 
 
 def plot_uncertainty(y_true, y_pred, background_data):
@@ -28,14 +29,18 @@ def plot_uncertainty(y_true, y_pred, background_data):
     :param y_pred: model samples
     :param background_data: numpy array containing the positions with data
     """
+    # Flips y (imshow assumes 0 on top, growing down)
+    y_true[:, 1] = -y_true[:, 1] + GRID_SIZE
+    y_pred[:, 1] = -y_pred[:, 1] + GRID_SIZE
+
     # Plots the background in black and black (white = positions with data)
     plt.imshow(-background_data, cmap='Greys', vmin=-1.0, vmax=0.0, alpha=0.5)
 
     # Plots the MC Dropout samples in blue, with some transparency
-    plt.scatter(x=y_pred[0, :], y=y_pred[1, :], c='b', s=2, alpha=0.1)
+    plt.scatter(x=y_pred[:, 0, :], y=y_pred[:, 1, :], c='b', s=2, alpha=0.1)
 
     # Plots the true position in solid red
-    plt.scatter(x=y_true[0], y=y_true[1], c='r', s=5)
+    plt.scatter(x=y_true[:, 0], y=y_true[:, 1], c='r', s=5)
 
     # Saves the plot
     plt.savefig(PLOT_PATH)
@@ -79,11 +84,11 @@ def main():
     assert y_pred.shape[2] > 1, "Not enough MC Dropout samples"
     logging.info("%s predictions loaded\n", y_true.shape[0])
 
-    # Pick a random position
-    selected_position = np.random.randint(0, y_true.shape[0])
-    y_true_position = y_true[selected_position, :] * GRID_SIZE
-    y_pred_position = y_pred[selected_position, ...] * GRID_SIZE
-    logging.info("Selected position (label): %s", selected_position)
+    # Pick a random positions
+    selected_positions = np.sort(np.random.randint(low=0, high=y_true.shape[0], size=N_SAMPLES))
+    y_true_position = y_true[selected_positions, :] * GRID_SIZE
+    y_pred_position = y_pred[selected_positions, ...] * GRID_SIZE
+    logging.info("Selected positions (labels): \n%s", y_true_position)
 
     # Plots the uncertainty on the map
     plot_uncertainty(y_true_position, y_pred_position, background_data)

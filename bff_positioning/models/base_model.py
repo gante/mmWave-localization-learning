@@ -218,7 +218,6 @@ class BaseModel():
         # dropout is 0 unless we want to test MC Dropout and we are NOT in the training loop
         dropout = 0.0
         if self.mc_dropout and not validation:
-            logging.info("Attention -- predicting with MC Dropout")
             dropout = self.dropout
 
         max_batches = int(np.ceil(X.shape[0] / self.batch_size))

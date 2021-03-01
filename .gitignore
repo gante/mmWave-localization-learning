@@ -16,3 +16,6 @@ dist/
 __TODO.txt
 *.pdf
 .DS_Store
+
+# tmp images
+*.jpg

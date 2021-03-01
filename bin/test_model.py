@@ -89,8 +89,8 @@ def main():
             "management -- that's why you'll see 10x test sets in the next logging messages.")
         tests_per_input = experiment_settings["tests_per_path"] * 10
 
-    y_true = None
-    y_pred = None
+    y_true = []
+    y_pred = []
     for set_idx in range(tests_per_input):
         logging.info("Creating test set %2s out of %2s...", set_idx+1, tests_per_input)
         if path_parameters:
@@ -111,18 +111,27 @@ def main():
                 data_parameters,
             )
         logging.info("Running predictions and storing data...\n")
-        # run once when MC Dropout is off, many time when it is on
-        for _ in range(max(1, mc_dropout_samples)):
+
+        y_true.append(labels_test)
+        if not mc_dropout_samples: # MC Dropout OFF
             predictions_test = model.predict(features_test)
-            axis = 2 if mc_dropout_samples else 0
-            y_true = np.stack((y_true, labels_test), axis=axis) \
-                if y_true is not None else labels_test
-            y_pred = np.stack((y_pred, predictions_test), axis=axis) \
-                if y_pred is not None else predictions_test
-            assert labels_test.shape[0] == y_true.shape[0] == y_pred.shape[0], \
-                "The predictions and the labels must have the same number of examples!"
-            assert labels_test.shape[1] == y_true.shape[1] == y_pred.shape[1], \
-                "The number of dimensions per sample must stay constant!"
+            y_pred.append(predictions_test)
+
+        for sample_rnd in range(mc_dropout_samples): # equivalent to else, MC Dropout ON
+            logging.info("MC Dropout sample round %s out of %s", sample_rnd, mc_dropout_samples)
+            predictions_test = model.predict(features_test)
+            y_pred.append(predictions_test)
+
+    # Stack results and sanity check
+    y_true = np.vstack(y_true)
+    if mc_dropout_samples:
+        y_pred = np.stack(y_pred, axis=2)
+    else:
+        y_pred = np.vstack(y_pred)
+    assert labels_test.shape[0] == y_true.shape[0] == y_pred.shape[0], \
+        "The predictions and the labels must have the same number of examples!"
+    assert labels_test.shape[1] == y_true.shape[1] == y_pred.shape[1], \
+        "The number of dimensions per sample must stay constant!"
 
     # Closes the model, gets the test scores, and stores predictions-labels pairs
     model.close()
@@ -137,11 +146,11 @@ def main():
         )
         logging.info("Average test distance: %.5f m || 95th percentile: %.5f m\n",
             test_score, test_95_perc)
-        preditions_file = os.path.join(
+
+    preditions_file = os.path.join(
             ml_parameters["model_folder"],
             experiment_name + '_' + experiment_settings["predictions_file"]
         )
-
     with open(preditions_file, 'wb') as data_file:
         pickle.dump([y_true, y_pred], data_file)
 
