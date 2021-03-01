@@ -148,9 +148,9 @@ def main():
             test_score, test_95_perc)
 
     preditions_file = os.path.join(
-            ml_parameters["model_folder"],
-            experiment_name + '_' + experiment_settings["predictions_file"]
-        )
+        ml_parameters["model_folder"],
+        experiment_name + '_' + experiment_settings["predictions_file"]
+    )
     with open(preditions_file, 'wb') as data_file:
         pickle.dump([y_true, y_pred], data_file)
 
