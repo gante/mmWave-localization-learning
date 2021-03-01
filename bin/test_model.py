@@ -120,7 +120,6 @@ def main():
             y_pred.append(predictions_test)
 
         for sample_rnd in tqdm(range(mc_dropout_samples)): # equivalent to else, MC Dropout ON
-            logging.info("MC Dropout sample round %s out of %s", sample_rnd, mc_dropout_samples)
             predictions_test = model.predict(features_test)
             y_pred.append(predictions_test)
 
