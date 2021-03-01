@@ -44,12 +44,13 @@ class TCN(BaseModel):
 
         # Adds fully connected layers (optional step)
         fcn_output = None
-        for _ in range(self.fc_layers):
-            print("\n\nasdf\n\n")
+        for layer_idx in range(self.fc_layers):
             fcn_output = add_fc_layer(
                 fcn_output if fcn_output is not None else tcn_output,
                 self.fc_neurons,
-                self.dropout_var
+                # last FC can't have dropout, otherwise the network will struggle to learn
+                # (inputs to the output layer set to 0)
+                self.dropout_var if layer_idx + 1 < self.fc_layers else 0.0
             )
 
         # Adds the output layer, storing the train step
