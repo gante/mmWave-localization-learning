@@ -1,6 +1,6 @@
 # Beamformed Fingerprint Learning
 
-An ML-based algorithm that enables energy efficient accurate positioning from mmWave transmissions - with and without tracking.
+An ML-based algorithm that enables energy efficient accurate positioning from mmWave transmissions - with and without tracking,
 
 <p align="center">
   <img src="extra/repo_images/error_vs_position.PNG" width="400"/>
