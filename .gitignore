@@ -19,3 +19,7 @@ __TODO.txt
 
 # tmp images
 *.jpg
+/.idea/
+/.idea/
+.idea/*
+/.idea/*
