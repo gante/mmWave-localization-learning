@@ -248,9 +248,10 @@ class Preprocessor():
             plt.savefig(image_locaton)
             logging.info("Done! (Check %s)", image_locaton)
 
-    def load_dataset(self):
+    def load_dataset(self, power_in_dbm=False):
         """ Loads the previously stored dataset, returning it
 
+        :param power_in_dbm: reverts the transformed features to dbm units
         :returns: previously stored features and labels
         """
         assert self.check_existing_dataset(), "The dataset with the specified path ({}) either "\
@@ -260,6 +261,13 @@ class Preprocessor():
 
         with open(self.preprocessed_file, 'rb') as dataset_file:
             features, labels, _ = pickle.load(dataset_file)
+
+        if power_in_dbm:
+            features = np.asarray(features)
+            features /= self.power_scale
+            features = np.where(features == 0.0, 0.0, features - self.power_offset)
+            features = features.tolist()
+
         return features, labels
 
 

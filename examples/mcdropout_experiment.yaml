@@ -50,7 +50,7 @@ ml_parameters:
     optimizer_type: "ADAM"
     batch_size: 64
     batch_size_inference: 256
-    dropout: 0.1
+    dropout: 0.2
     max_epochs: 1000
     early_stopping: 50          # Stops training after these epochs without improvement on val set
     fc_layers: 12
