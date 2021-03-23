@@ -17,7 +17,7 @@ __TODO.txt
 *.pdf
 .DS_Store
 
-# tmp images
+# other
 *.jpg
 /.idea/
 /.idea/
@@ -26,3 +26,4 @@ __TODO.txt
 /**/.idea/*".idea/*" 
 ".idea/*" 
 ".idea/*" 
+*.png

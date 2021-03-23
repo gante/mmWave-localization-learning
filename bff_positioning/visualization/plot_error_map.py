@@ -1,6 +1,6 @@
-""" Script to plot the cumulative histogram for the predictions error
+""" Script to plot the the average error per position
 
-(Instructions to run: `python path/to/plot_histogram.py <path to .yaml file>`)
+(Instructions to run: `python path/to/plot_error_map.py <path to .yaml file>`)
 """
 
 #pylint: disable=wrong-import-position
