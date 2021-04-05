@@ -43,10 +43,21 @@ def plot_uncertainty(y_true, y_pred, background_data):
     ax.imshow(-background_data, cmap='Greys', vmin=-1.0, vmax=0.0, alpha=MAP_ALPHA)
 
     # Plots the MC Dropout samples in blue, with some transparency
-    ax.scatter(x=y_pred[:, 0, :], y=y_pred[:, 1, :], c='b', s=3, alpha=0.15, edgecolors='none')
+    ax.scatter(
+        x=y_pred[:, 0, :],
+        y=y_pred[:, 1, :],
+        c='b', s=3, alpha=0.15, edgecolors='none',
+        label="MC Dropout samples"
+    )
 
     # Plots the true position in solid red
-    ax.scatter(x=y_true[:, 0], y=y_true[:, 1], c='r', s=5, edgecolors='none')
+    ax.scatter(
+        x=y_true[:, 0],
+        y=y_true[:, 1],
+        c='r', s=5, edgecolors='none',
+        label="True positions"
+    )
+    ax.legend(loc="upper right", labelcolor=['b', 'r'], fontsize="small")
 
     # Plots a zoomed detail
     axins = zoomed_inset_axes(ax, zoom=3, loc='lower left')
