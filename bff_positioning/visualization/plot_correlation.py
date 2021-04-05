@@ -7,6 +7,7 @@
 
 import os
 import sys
+import copy
 import pickle
 import logging
 import yaml
