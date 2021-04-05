@@ -10,7 +10,6 @@ import sys
 import pickle
 import logging
 import yaml
-import copy
 
 from tqdm import tqdm
 import numpy as np
@@ -32,6 +31,7 @@ def plot_correlation(y_true, y_pred, background_data):
 
     :param y_true: ground truth
     :param y_pred: model samples
+    :param background_data: numpy array containing the positions with data
     """
 
     correlations = np.zeros((int(GRID_SIZE)+1, int(GRID_SIZE)+1))
