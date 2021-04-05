@@ -15,11 +15,15 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
+from matplotlib.transforms import TransformedBbox
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, BboxPatch
 
 
-N_SAMPLES = 20
+ZOOM_SIZE = 15 # +/-, in meters
+N_SAMPLES = 10
 GRID_SIZE = 400
 PLOT_PATH = "uncertainty.jpg"
+MAP_ALPHA = 0.5
 
 
 def plot_uncertainty(y_true, y_pred, background_data):
@@ -29,20 +33,58 @@ def plot_uncertainty(y_true, y_pred, background_data):
     :param y_pred: model samples
     :param background_data: numpy array containing the positions with data
     """
+    _, ax = plt.subplots()
+
     # Flips y (imshow assumes 0 on top, growing down)
     y_true[:, 1] = -y_true[:, 1] + GRID_SIZE
     y_pred[:, 1] = -y_pred[:, 1] + GRID_SIZE
 
     # Plots the background in black and black (white = positions with data)
-    plt.imshow(-background_data, cmap='Greys', vmin=-1.0, vmax=0.0, alpha=0.5)
+    ax.imshow(-background_data, cmap='Greys', vmin=-1.0, vmax=0.0, alpha=MAP_ALPHA)
 
     # Plots the MC Dropout samples in blue, with some transparency
-    plt.scatter(x=y_pred[:, 0, :], y=y_pred[:, 1, :], c='b', s=2, alpha=0.01)
+    ax.scatter(x=y_pred[:, 0, :], y=y_pred[:, 1, :], c='b', s=3, alpha=0.15, edgecolors='none')
 
     # Plots the true position in solid red
-    plt.scatter(x=y_true[:, 0], y=y_true[:, 1], c='r', s=5)
+    ax.scatter(x=y_true[:, 0], y=y_true[:, 1], c='r', s=5, edgecolors='none')
 
-    # Saves the plot
+    # Plots a zoomed detail
+    axins = zoomed_inset_axes(ax, zoom=3, loc='lower left')
+    axins.imshow(-background_data, cmap='Greys', vmin=-1.0, vmax=0.0, alpha=MAP_ALPHA)
+    rand_idx = np.random.randint(low=0, high=y_true.shape[0], size=1)
+    axins.scatter(
+        x=y_pred[rand_idx, 0, :],
+        y=y_pred[rand_idx, 1, :],
+        c='b', s=4, alpha=0.15, edgecolors='none',
+    )
+    axins.scatter(x=y_true[rand_idx, 0], y=y_true[rand_idx, 1], c='r', edgecolors='none')
+
+    # Limit the region for zoom
+    axins.set_xlim(y_true[rand_idx, 0]-ZOOM_SIZE, y_true[rand_idx, 0]+ZOOM_SIZE)
+    axins.set_ylim(y_true[rand_idx, 1]-ZOOM_SIZE, y_true[rand_idx, 1]+ZOOM_SIZE)
+
+    # Hides ticks
+    plt.xticks(visible=False)
+    plt.yticks(visible=False)
+
+    # draw a bbox of the region of the inset axes in the parent axes and connecting lines between
+    # the bbox and the inset axes area. Also inverts the y of the inner plot, as the outer plot
+    # is inverted (imshow)
+    axins.invert_yaxis()
+
+    # ================================================================
+    # (adapted from `mark_inset`, removing the connectors)
+    parent_axes = ax
+    inset_axes = axins
+    kwargs = {"fc": "none", "ec": "0.0"}
+    rect = TransformedBbox(inset_axes.viewLim, parent_axes.transData)
+
+    fill = bool({'fc', 'facecolor', 'color'}.intersection(kwargs))
+    pp = BboxPatch(rect, fill=fill, **kwargs)
+    parent_axes.add_patch(pp)
+    # ================================================================
+
+    plt.draw()
     plt.savefig(PLOT_PATH, dpi=300)
     logging.info("Plot written to %s", PLOT_PATH)
 

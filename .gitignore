@@ -17,6 +17,15 @@ __TODO.txt
 *.pdf
 .DS_Store
 
-# tmp images
+# IDE files
+/.idea/
+/.idea/
+.idea/*
+/.idea/*
+/**/.idea/*".idea/*"
+".idea/*"
+".idea/*"
+
+# other
 *.jpg
 *.png
