@@ -17,13 +17,15 @@ __TODO.txt
 *.pdf
 .DS_Store
 
-# other
-*.jpg
+# IDE files
 /.idea/
 /.idea/
 .idea/*
 /.idea/*
-/**/.idea/*".idea/*" 
-".idea/*" 
-".idea/*" 
+/**/.idea/*".idea/*"
+".idea/*"
+".idea/*"
+
+# other
+*.jpg
 *.png
