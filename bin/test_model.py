@@ -118,10 +118,10 @@ def main():
         if not mc_dropout_samples: # MC Dropout OFF
             predictions_test = model.predict(features_test)
             y_pred.append(predictions_test)
-
-        for sample_rnd in tqdm(range(mc_dropout_samples)): # equivalent to else, MC Dropout ON
-            predictions_test = model.predict(features_test)
-            y_pred.append(predictions_test)
+        else: # MC Dropout ON
+            for sample_rnd in tqdm(range(mc_dropout_samples)):
+                predictions_test = model.predict(features_test)
+                y_pred.append(predictions_test)
 
     # Stack results and sanity check
     y_true = np.vstack(y_true)
@@ -129,9 +129,9 @@ def main():
         y_pred = np.stack(y_pred, axis=2)
     else:
         y_pred = np.vstack(y_pred)
-    assert labels_test.shape[0] == y_true.shape[0] == y_pred.shape[0], \
+    assert y_true.shape[0] == y_pred.shape[0], \
         "The predictions and the labels must have the same number of examples!"
-    assert labels_test.shape[1] == y_true.shape[1] == y_pred.shape[1], \
+    assert y_true.shape[1] == y_pred.shape[1], \
         "The number of dimensions per sample must stay constant!"
 
     # Closes the model, gets the test scores, and stores predictions-labels pairs
