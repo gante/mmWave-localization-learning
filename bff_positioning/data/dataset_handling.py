@@ -109,7 +109,7 @@ def _get_scaler(scaler_type):
     """
     scaler = None
     if scaler_type == "binarizer":
-        scaler = Binarizer(0.1, copy=False)
+        scaler = Binarizer(threshold=0.1, copy=False)
     elif scaler_type == "normalizer":
         scaler = Normalizer(copy=False)
     elif scaler_type is not None:
