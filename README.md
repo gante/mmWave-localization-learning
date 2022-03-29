@@ -132,10 +132,10 @@ pip3 install -r mmWave-localization-learning/requirements.txt
 
 ### Dataset
 
-The dataset is available [here](https://drive.google.com/drive/folders/1gfbZKCsq4D1tvPzPHLftWljsVaL2pjg_?usp=sharing). If the link is broken or something is not working properly, please contact me through email (joao.gante@tecnico.ulisboa.pt).
-
 The data was generated using the [Wireless InSite ray-tracing simulator](https://www.remcom.com/wireless-insite-em-propagation-software/) and a [high precision open-source 3D map of New York](http://www1.nyc.gov/site/doitt/initiatives/3d-building.page), made available by the New York City Department of Information Technology & Telecommunications.
 The simulation consists of a 400 by 400 meters area, centered at the [Kaufman Management Center](https://goo.gl/maps/xrqvT9VS59K2). If you would like to have the 3D files for this or other sections of NYC, feel free to email me.
+
+The dataset is available [here](https://drive.google.com/drive/folders/1gfbZKCsq4D1tvPzPHLftWljsVaL2pjg_?usp=sharing) -- if the link is broken or something is not working properly, please raise an issue in the repository. This file is the result of some additional processing on top of the from Wireless InSite output files, check [here](extra/parsing) if you'd like to know more details.
 
 
 ## Experiments
